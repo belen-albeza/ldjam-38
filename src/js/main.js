@@ -15,6 +15,12 @@ var BootScene = {
     preload: function () {
         // load here assets required for the loading screen
         this.game.load.image('preloader_bar', 'images/preloader_bar.png');
+        this.game.load.image('tileset', 'images/biomas_tileset.png');
+
+        this.game.load.image('mask:tiny', 'images/mask_tiny.png');
+        this.game.load.image('mask:medium', 'images/mask_medium.png');
+        this.game.load.image('sky:tiny', 'images/blue_sky_tiny.png');
+        this.game.load.image('sky:medium', 'images/blue_sky_medium.png');
     },
 
     create: function () {
