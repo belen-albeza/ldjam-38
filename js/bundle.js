@@ -162,9 +162,11 @@ const MASKS = {
             '@@xxxxxx@@'
 };
 
-const DESERT_MAX_WATER = 10;
+const MAX_WATER = {
+    SOIL: 20,
+    DESERT: 10
+};
 const SOIL_NO_VEG_MAX_WATER = 20;
-const MAX_WATER = 100;
 
 function isEarth(bioma) {
     return bioma === 'DESERT' || bioma === 'SOIL';
@@ -214,12 +216,46 @@ Planet.prototype.update = function () {
 Planet.prototype.tick = function () {
     let self = this;
     function updateWaterLevel(cell, col, row) {
+        let oldWater = cell.water;
         if (self.get(col - 1, row) === 'WATER') { cell.water++; }
         if (self.get(col + 1, row) === 'WATER') { cell.water++; }
         if (self.get(col, row + 1) === 'WATER') { cell.water++; }
         if (self.get(col, row - 1) === 'WATER') { cell.water++; }
 
-        cell.water = Math.min(cell.water, MAX_WATER);
+        if (cell.water - oldWater === 0) {
+            cell.water--;
+        }
+
+        cell.water = Math.max(0, Math.min(cell.water, MAX_WATER[cell.bioma]));
+    }
+
+    function updateCell(cell, col, row) {
+        let upper = self.get(col, row - 1, true);
+
+        // soil, desert
+        if (isEarth(cell.bioma)) {
+            updateWaterLevel(cell, col, row);
+
+            // desertification and loss of plants when land loses water
+            if (cell.water === 0) {
+                if (upper.bioma === 'PLANTS') { upper.shiftTo = 'EMPTY'; }
+                if (cell.bioma === 'SOIL') { cell.shiftTo = 'DESERT'; }
+            }
+            // shift from desert to soil when humid enough
+            else if (cell.bioma === 'DESERT' && cell.water >= MAX_WATER.DESERT) {
+                cell.shiftTo = 'SOIL';
+            }
+            // grow plants on soil with water
+            else if (cell.bioma === 'SOIL' && upper.bioma === 'EMPTY' &&
+            cell.water >= SOIL_NO_VEG_MAX_WATER) {
+                upper.shiftTo = 'PLANTS';
+            }
+            // ungrown plants on soil when loss of water
+            else if (cell.bioma === 'SOIL' && upper.bioma === 'PLANTS' &&
+            cell.water < SOIL_NO_VEG_MAX_WATER) {
+                upper.shiftTo = 'EMPTY';
+            }
+        }
     }
 
     for (let col = 0; col < this.radius; col++) {
@@ -227,19 +263,7 @@ Planet.prototype.tick = function () {
             let cell = this.data[row * this.radius + col];
             if (cell.bioma === null) { continue; }
 
-            if (isEarth(cell.bioma)) {
-                updateWaterLevel(cell, col, row);
-                // shift from desert to soil when humid enough
-                if (cell.bioma === 'DESERT' && cell.water >= DESERT_MAX_WATER) {
-                    cell.shiftTo = 'SOIL';
-                }
-                else if (cell.bioma === 'SOIL') {
-                    let upper = this.get(col, row - 1, true);
-                    if (upper.bioma === 'EMPTY' && cell.water >= SOIL_NO_VEG_MAX_WATER) {
-                        upper.shiftTo = 'PLANTS';
-                    }
-                }
-            }
+            updateCell(cell, col, row);
             cell.ticks = (cell.ticks + 1) % 100; // TODO: adjust magic number
         }
     }
@@ -331,9 +355,14 @@ Planet.prototype.validateBioma = function (col, row, value) {
 Planet.prototype._applyPlacementEffects = function (col, row) {
     let bioma = this.get(col, row);
     if (bioma === 'WATER') {
+        // remove vegetation because it needs land
         if (isVegetation(this.get(col, row - 1))) {
             this.set(col, row - 1, 'EMPTY');
         }
+    }
+    else if (isVegetation(bioma)) {
+        // give a bit of water to the land below
+        this.get(col, row + 1, true).water += 5;
     }
 };
 
