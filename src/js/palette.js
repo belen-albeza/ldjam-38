@@ -2,7 +2,7 @@
 
 const BIOMAS = require('./bioma_const.js').BIOMAS;
 
-function Palette(group) {
+function Palette(group, sfx) {
     this.group = group;
     this.currentBioma = null;
     this.currentIcon = null;
@@ -18,11 +18,14 @@ function Palette(group) {
     Object.keys(this.buttons).forEach(function (key) {
         this.group.add(this.buttons[key]);
     }, this);
+
+    this.sfx = sfx;
 }
 
 Palette.prototype.selectBioma = function(bioma, icon) {
     this.currentBioma = bioma;
     this.currentIcon = icon;
+    this.sfx.play();
 };
 
 Palette.prototype.unselect = function () {

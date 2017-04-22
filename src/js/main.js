@@ -15,14 +15,6 @@ var BootScene = {
     preload: function () {
         // load here assets required for the loading screen
         this.game.load.image('preloader_bar', 'images/preloader_bar.png');
-        this.game.load.image('tileset', 'images/biomas_tileset.png');
-        this.game.load.spritesheet('palette', 'images/bioma_palette.png',
-            32, 32);
-
-        this.game.load.image('mask:tiny', 'images/mask_tiny.png');
-        this.game.load.image('mask:medium', 'images/mask_medium.png');
-        this.game.load.image('sky:tiny', 'images/blue_sky_tiny.png');
-        this.game.load.image('sky:medium', 'images/blue_sky_medium.png');
     },
 
     create: function () {
@@ -37,7 +29,19 @@ var PreloaderScene = {
         this.loadingBar.anchor.setTo(0, 0.5);
         this.load.setPreloadSprite(this.loadingBar);
 
-        // TODO: load here the assets for the game
+        // load assets for the game
+        this.game.load.audio('sfx:select', 'audio/select.wav');
+        this.game.load.audio('sfx:placed', 'audio/placed.wav');
+        this.game.load.audio('sfx:error', 'audio/error.wav');
+
+        this.game.load.image('tileset', 'images/biomas_tileset.png');
+        this.game.load.spritesheet('palette', 'images/bioma_palette.png',
+            32, 32);
+
+        this.game.load.image('mask:tiny', 'images/mask_tiny.png');
+        this.game.load.image('mask:medium', 'images/mask_medium.png');
+        this.game.load.image('sky:tiny', 'images/blue_sky_tiny.png');
+        this.game.load.image('sky:medium', 'images/blue_sky_medium.png');
     },
 
     create: function () {

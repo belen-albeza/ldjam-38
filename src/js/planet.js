@@ -42,8 +42,8 @@ function Planet(size, group) {
     this.map = this.game.add.tilemap(null, Planet.TSIZE, Planet.TSIZE,
         this.radius, this.radius);
     this.map.addTilesetImage('bioma', 'tileset');
-    this.mapLayer = this.map.create('main', this.radius, this.radius, Planet.TSIZE,
-        Planet.TSIZE, group);
+    this.mapLayer = this.map.create('main', this.radius, this.radius,
+        Planet.TSIZE, Planet.TSIZE, group);
     this.mapLayer.anchor.setTo(0.5);
     this._updateMapFromData();
 }
@@ -124,14 +124,18 @@ Planet.prototype.get = function(col, row) {
     }
 };
 
+// 1: tile placed
+// -2: tile could not be placed because of rules
+// -1: tile outside map bounds
+
 Planet.prototype.set = function(col, row, value) {
     if (col >= 0 && col < this.radius && row >= 0 && row < this.radius) {
         if (this.data[row * this.radius + col] !== null) { // avoid mask
             this.data[row * this.radius + col] = value;
-            return true;
+            return 1;
         }
     }
-    return false;
+    return -1;
 };
 
 module.exports = Planet;

@@ -8,19 +8,15 @@ const BiomaPalette = require('./palette.js');
 
 var PlayScene = {};
 
-PlayScene.init = function () {
-    this.game.input.onDown.add(function (pointer) {
-        if (!this.biomaPalette.currentBioma) { return; }
-        // TODO: YOLO
-        let wasPlaced = this.planet.putBiomaWorldXY(
-            this.biomaPalette.currentBioma, pointer.worldX, pointer.worldY);
-        if (!wasPlaced) {
-            this.biomaPalette.unselect();
-        }
-    }, this);
-};
-
 PlayScene.create = function () {
+    this._setupInput();
+
+    this.sfx = {
+        placed: this.game.add.audio('sfx:placed'),
+        error: this.game.add.audio('sfx:error'),
+        select: this.game.add.audio('sfx:select')
+    };
+
     this.planetLayer = this.game.add.group();
     this.planetLayer.position.set(256, 256);
     this.planet = new Planet('MEDIUM', this.planetLayer);
@@ -30,7 +26,7 @@ PlayScene.create = function () {
     // create bioma palette
     this.hud = this.game.add.group();
     this.hud.position.set(520, 8);
-    this.biomaPalette = new BiomaPalette(this.hud);
+    this.biomaPalette = new BiomaPalette(this.hud, this.sfx.select);
 
     // cursor
     this.cursorSprite = this.game.add.image(0, 0, 'palette');
@@ -51,6 +47,36 @@ PlayScene.update = function () {
     }
     else {
         this.cursorSprite.visible = false;
+    }
+};
+
+PlayScene._setupInput = function () {
+    // NOTE: ñapa
+    // See: http://www.html5gamedevs.com/topic/11308-gameinputondown-event-and-textbuttoneventsoninputdown-are-fired-both-when-clicking-on-textbutton/
+    let bg = this.game.add.sprite(0, 0);
+    bg.fixedToCamera = true;
+    bg.scale.setTo(this.game.width, this.game.height);
+    bg.inputEnabled = true;
+    bg.input.priorityID = 0; // lower priority
+    bg.events.onInputDown.add(this._handleWorldClick, this);
+};
+
+PlayScene._handleWorldClick = function (target, pointer) {
+    if (!this.biomaPalette.currentBioma) { return; }
+
+    // TODO: YOLO
+    let placedOutcome = this.planet.putBiomaWorldXY(
+        this.biomaPalette.currentBioma, pointer.worldX, pointer.worldY);
+    switch (placedOutcome) {
+    case 1: // placement was ok
+        this.sfx.placed.play();
+        break;
+    case -1: // tile outside bounds
+        this.biomaPalette.unselect();
+        break;
+    case -2: // error placing tile
+        this.sfx.error.play();
+        break;
     }
 };
 
