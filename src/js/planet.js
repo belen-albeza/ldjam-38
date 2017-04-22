@@ -196,7 +196,6 @@ Planet.prototype.validateBioma = function (col, row, value) {
 Planet.prototype._applyPlacementEffects = function (col, row) {
     let bioma = this.get(col, row);
     if (bioma === 'WATER') {
-        console.log('placed water');
         if (isVegetation(this.get(col, row - 1))) {
             this.set(col, row - 1, 'EMPTY');
         }
