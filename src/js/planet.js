@@ -178,7 +178,7 @@ Planet.prototype.get = function(col, row, full) {
         return full ? cell : cell.bioma;
     }
     else {
-        return null;
+        return full ? { bioma: null } : null;
     }
 };
 
