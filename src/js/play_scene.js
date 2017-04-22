@@ -32,6 +32,8 @@ PlayScene.create = function () {
     this.cursorSprite = this.game.add.image(0, 0, 'palette');
     this.cursorSprite.alpha = 0.5;
     this.cursorSprite.visible = false;
+
+    this.frameCounter = 0;
 };
 
 PlayScene.update = function () {
@@ -48,6 +50,13 @@ PlayScene.update = function () {
     else {
         this.cursorSprite.visible = false;
     }
+
+    // apply bioma cycles to planet
+    this.frameCounter++;
+    if (this.frameCounter === 15) {
+        this.planet.tick();
+        this.frameCounter = 0;
+    }
 };
 
 PlayScene._setupInput = function () {
@@ -62,21 +71,24 @@ PlayScene._setupInput = function () {
 };
 
 PlayScene._handleWorldClick = function (target, pointer) {
-    if (!this.biomaPalette.currentBioma) { return; }
-
-    // TODO: YOLO
-    let placedOutcome = this.planet.putBiomaWorldXY(
-        this.biomaPalette.currentBioma, pointer.worldX, pointer.worldY);
-    switch (placedOutcome) {
-    case 1: // placement was ok
-        this.sfx.placed.play();
-        break;
-    case -1: // tile outside bounds
-        this.biomaPalette.unselect();
-        break;
-    case -2: // error placing tile
-        this.sfx.error.play();
-        break;
+    if (this.biomaPalette.currentBioma) { // place bioma in world
+        let placedOutcome = this.planet.putBiomaWorldXY(
+            this.biomaPalette.currentBioma, pointer.worldX, pointer.worldY);
+        switch (placedOutcome) {
+        case 1: // placement was ok
+            this.sfx.placed.play();
+            break;
+        case -1: // tile outside bounds
+            this.biomaPalette.unselect();
+            break;
+        case -2: // error placing tile
+            this.sfx.error.play();
+            break;
+        }
+    }
+    else { // show bioma stats
+        let cell = this.planet.getCellXY(pointer.worldX, pointer.worldY);
+        console.log(cell);
     }
 };
 
