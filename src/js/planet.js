@@ -126,12 +126,12 @@ Planet.prototype.get = function(col, row) {
 
 Planet.prototype.set = function(col, row, value) {
     if (col >= 0 && col < this.radius && row >= 0 && row < this.radius) {
-        this.data[row * this.radius + col] = value;
-        return true;
+        if (this.data[row * this.radius + col] !== null) { // avoid mask
+            this.data[row * this.radius + col] = value;
+            return true;
+        }
     }
-    else {
-        return false;
-    }
+    return false;
 };
 
 module.exports = Planet;

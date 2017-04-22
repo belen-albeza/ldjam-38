@@ -28,6 +28,6 @@ Palette.prototype.selectBioma = function(bioma, icon) {
 Palette.prototype.unselect = function () {
     this.currentBioma = null;
     this.currentIcon = null;
-}
+};
 
 module.exports = Palette;
