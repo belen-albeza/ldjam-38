@@ -346,7 +346,8 @@ Planet.prototype.validateBioma = function (col, row, value) {
                isSolidOrWater(this.get(col + 1, row)) &&
                isSolidOrWater(this.get(col, row + 1));
     case 'PLANTS':
-        return isEarth(this.get(col, row + 1));
+        return this.get(col, row) === 'EMPTY' &&
+            isEarth(this.get(col, row + 1));
     default:
         return true;
     }
