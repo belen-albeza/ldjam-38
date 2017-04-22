@@ -49,14 +49,6 @@ var BootScene = {
     preload: function () {
         // load here assets required for the loading screen
         this.game.load.image('preloader_bar', 'images/preloader_bar.png');
-        this.game.load.image('tileset', 'images/biomas_tileset.png');
-        this.game.load.spritesheet('palette', 'images/bioma_palette.png',
-            32, 32);
-
-        this.game.load.image('mask:tiny', 'images/mask_tiny.png');
-        this.game.load.image('mask:medium', 'images/mask_medium.png');
-        this.game.load.image('sky:tiny', 'images/blue_sky_tiny.png');
-        this.game.load.image('sky:medium', 'images/blue_sky_medium.png');
     },
 
     create: function () {
@@ -71,7 +63,19 @@ var PreloaderScene = {
         this.loadingBar.anchor.setTo(0, 0.5);
         this.load.setPreloadSprite(this.loadingBar);
 
-        // TODO: load here the assets for the game
+        // load assets for the game
+        this.game.load.audio('sfx:select', 'audio/select.wav');
+        this.game.load.audio('sfx:placed', 'audio/placed.wav');
+        this.game.load.audio('sfx:error', 'audio/error.wav');
+
+        this.game.load.image('tileset', 'images/biomas_tileset.png');
+        this.game.load.spritesheet('palette', 'images/bioma_palette.png',
+            32, 32);
+
+        this.game.load.image('mask:tiny', 'images/mask_tiny.png');
+        this.game.load.image('mask:medium', 'images/mask_medium.png');
+        this.game.load.image('sky:tiny', 'images/blue_sky_tiny.png');
+        this.game.load.image('sky:medium', 'images/blue_sky_medium.png');
     },
 
     create: function () {
@@ -95,7 +99,7 @@ window.onload = function () {
 
 const BIOMAS = require('./bioma_const.js').BIOMAS;
 
-function Palette(group) {
+function Palette(group, sfx) {
     this.group = group;
     this.currentBioma = null;
     this.currentIcon = null;
@@ -111,11 +115,14 @@ function Palette(group) {
     Object.keys(this.buttons).forEach(function (key) {
         this.group.add(this.buttons[key]);
     }, this);
+
+    this.sfx = sfx;
 }
 
 Palette.prototype.selectBioma = function(bioma, icon) {
     this.currentBioma = bioma;
     this.currentIcon = icon;
+    this.sfx.play();
 };
 
 Palette.prototype.unselect = function () {
@@ -170,8 +177,8 @@ function Planet(size, group) {
     this.map = this.game.add.tilemap(null, Planet.TSIZE, Planet.TSIZE,
         this.radius, this.radius);
     this.map.addTilesetImage('bioma', 'tileset');
-    this.mapLayer = this.map.create('main', this.radius, this.radius, Planet.TSIZE,
-        Planet.TSIZE, group);
+    this.mapLayer = this.map.create('main', this.radius, this.radius,
+        Planet.TSIZE, Planet.TSIZE, group);
     this.mapLayer.anchor.setTo(0.5);
     this._updateMapFromData();
 }
@@ -252,14 +259,48 @@ Planet.prototype.get = function(col, row) {
     }
 };
 
+// 1: tile placed
+// -2: tile could not be placed because of rules
+// -1: tile outside map bounds
+
 Planet.prototype.set = function(col, row, value) {
     if (col >= 0 && col < this.radius && row >= 0 && row < this.radius) {
         if (this.data[row * this.radius + col] !== null) { // avoid mask
-            this.data[row * this.radius + col] = value;
-            return true;
+            if (this.validateBioma(col, row, value)) {
+                this.data[row * this.radius + col] = value;
+                return 1;
+            }
+            else {
+                return -2;
+            }
         }
     }
-    return false;
+    return -1;
+};
+
+Planet.prototype.validateBioma = function (col, row, value) {
+    function isEarth(bioma) {
+        return bioma === 'DESERT' || bioma === 'SOIL';
+    }
+
+    function isVegetation(bioma) {
+        return bioma === 'FOREST' || bioma === 'PLANTS';
+    }
+
+    function isSolidOrWater(bioma) {
+        return bioma !== 'EMPTY' && !isVegetation(bioma);
+    }
+
+    switch(value) {
+    case 'WATER':
+        return isSolidOrWater(this.get(col - 1, row)) &&
+               isSolidOrWater(this.get(col + 1, row)) &&
+               isSolidOrWater(this.get(col, row + 1));
+    case 'PLANTS':
+        return isEarth(this.get(col, row + 1));
+    default:
+        return true;
+    }
 };
 
 module.exports = Planet;
@@ -275,19 +316,15 @@ const BiomaPalette = require('./palette.js');
 
 var PlayScene = {};
 
-PlayScene.init = function () {
-    this.game.input.onDown.add(function (pointer) {
-        if (!this.biomaPalette.currentBioma) { return; }
-        // TODO: YOLO
-        let wasPlaced = this.planet.putBiomaWorldXY(
-            this.biomaPalette.currentBioma, pointer.worldX, pointer.worldY);
-        if (!wasPlaced) {
-            this.biomaPalette.unselect();
-        }
-    }, this);
-};
-
 PlayScene.create = function () {
+    this._setupInput();
+
+    this.sfx = {
+        placed: this.game.add.audio('sfx:placed'),
+        error: this.game.add.audio('sfx:error'),
+        select: this.game.add.audio('sfx:select')
+    };
+
     this.planetLayer = this.game.add.group();
     this.planetLayer.position.set(256, 256);
     this.planet = new Planet('MEDIUM', this.planetLayer);
@@ -297,7 +334,7 @@ PlayScene.create = function () {
     // create bioma palette
     this.hud = this.game.add.group();
     this.hud.position.set(520, 8);
-    this.biomaPalette = new BiomaPalette(this.hud);
+    this.biomaPalette = new BiomaPalette(this.hud, this.sfx.select);
 
     // cursor
     this.cursorSprite = this.game.add.image(0, 0, 'palette');
@@ -318,6 +355,36 @@ PlayScene.update = function () {
     }
     else {
         this.cursorSprite.visible = false;
+    }
+};
+
+PlayScene._setupInput = function () {
+    // NOTE: ñapa
+    // See: http://www.html5gamedevs.com/topic/11308-gameinputondown-event-and-textbuttoneventsoninputdown-are-fired-both-when-clicking-on-textbutton/
+    let bg = this.game.add.sprite(0, 0);
+    bg.fixedToCamera = true;
+    bg.scale.setTo(this.game.width, this.game.height);
+    bg.inputEnabled = true;
+    bg.input.priorityID = 0; // lower priority
+    bg.events.onInputDown.add(this._handleWorldClick, this);
+};
+
+PlayScene._handleWorldClick = function (target, pointer) {
+    if (!this.biomaPalette.currentBioma) { return; }
+
+    // TODO: YOLO
+    let placedOutcome = this.planet.putBiomaWorldXY(
+        this.biomaPalette.currentBioma, pointer.worldX, pointer.worldY);
+    switch (placedOutcome) {
+    case 1: // placement was ok
+        this.sfx.placed.play();
+        break;
+    case -1: // tile outside bounds
+        this.biomaPalette.unselect();
+        break;
+    case -2: // error placing tile
+        this.sfx.error.play();
+        break;
     }
 };
 
