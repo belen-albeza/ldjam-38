@@ -230,10 +230,12 @@ Planet.prototype._updateMapFromData = function() {
                 tileIndex = TILESET.DEAD;
                 break;
             case 'DESERT':
-                tileIndex = TILESET.DESERT;
+                tileIndex = isVegetation(this.get(col, row - 1)) ?
+                    TILESET.DESERT_VEG : TILESET.DESERT;
                 break;
             case 'SOIL':
-                tileIndex = TILESET.SOIL;
+                tileIndex = isVegetation(this.get(col, row - 1)) ?
+                    TILESET.SOIL_VEG : TILESET.SOIL;
                 break;
             case 'WATER':
                 tileIndex = (this.get(col, row - 1) === 'EMPTY') ?
