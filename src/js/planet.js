@@ -42,9 +42,9 @@ function Planet(size, group) {
     this.map = this.game.add.tilemap(null, Planet.TSIZE, Planet.TSIZE,
         this.radius, this.radius);
     this.map.addTilesetImage('bioma', 'tileset');
-    let layer = this.map.create('main', this.radius, this.radius, Planet.TSIZE,
+    this.mapLayer = this.map.create('main', this.radius, this.radius, Planet.TSIZE,
         Planet.TSIZE, group);
-    layer.anchor.setTo(0.5);
+    this.mapLayer.anchor.setTo(0.5);
     this._updateMapFromData();
 }
 
@@ -65,12 +65,27 @@ Planet.prototype.prettyPrint = function () {
     }
 };
 
+Planet.prototype.putBiomaWorldXY = function (bioma, worldX, worldY) {
+    let x = worldX - (this.group.x + this.mapLayer.left);
+    let y = worldY - (this.group.y + this.mapLayer.top);
+
+    // TODO: disallow NULL positions
+    let col = Math.floor(x / Planet.TSIZE);
+    let row = Math.floor(y / Planet.TSIZE);
+    return this.set(col, row, REVERSE_BIOMAS[bioma]);
+};
+
+
 Planet.prototype._buildInitialData = function(radius, mask) {
     let data = new Array(radius * radius);
     for (let i = 0; i < data.length; i++) {
         data[i] = REVERSE_BIOMAS[mask[i]] || null;
     }
     return data;
+};
+
+Planet.prototype.update = function () {
+    this._updateMapFromData();
 };
 
 Planet.prototype._updateMapFromData = function() {
@@ -83,6 +98,16 @@ Planet.prototype._updateMapFromData = function() {
             case 'DEAD':
                 tileIndex = TILESET.DEAD;
                 break;
+            case 'DESERT':
+                tileIndex = TILESET.DESERT;
+                break;
+            case 'WATER':
+                tileIndex = (this.get(col, row - 1) === 'EMPTY') ?
+                    TILESET.WATER_TOP : TILESET.WATER;
+                break;
+            case 'PLANTS':
+                tileIndex = TILESET.VEG;
+                break;
             }
 
             this.map.putTile(tileIndex, col, row);
@@ -91,11 +116,22 @@ Planet.prototype._updateMapFromData = function() {
 };
 
 Planet.prototype.get = function(col, row) {
-    return this.data[row * this.radius + col];
+    if (col >= 0 && col < this.radius && row >= 0 && row < this.radius) {
+        return this.data[row * this.radius + col];
+    }
+    else {
+        return null;
+    }
 };
 
 Planet.prototype.set = function(col, row, value) {
-    this.data[row * this.radius + col] = value;
+    if (col >= 0 && col < this.radius && row >= 0 && row < this.radius) {
+        this.data[row * this.radius + col] = value;
+        return true;
+    }
+    else {
+        return false;
+    }
 };
 
 module.exports = Planet;
