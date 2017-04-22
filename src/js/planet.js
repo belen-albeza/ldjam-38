@@ -131,11 +131,41 @@ Planet.prototype.get = function(col, row) {
 Planet.prototype.set = function(col, row, value) {
     if (col >= 0 && col < this.radius && row >= 0 && row < this.radius) {
         if (this.data[row * this.radius + col] !== null) { // avoid mask
-            this.data[row * this.radius + col] = value;
-            return 1;
+            if (this.validateBioma(col, row, value)) {
+                this.data[row * this.radius + col] = value;
+                return 1;
+            }
+            else {
+                return -2;
+            }
         }
     }
     return -1;
+};
+
+Planet.prototype.validateBioma = function (col, row, value) {
+    function isEarth(bioma) {
+        return bioma === 'DESERT' || bioma === 'SOIL';
+    }
+
+    function isVegetation(bioma) {
+        return bioma === 'FOREST' || bioma === 'PLANTS';
+    }
+
+    function isSolidOrWater(bioma) {
+        return bioma !== 'EMPTY' && !isVegetation(bioma);
+    }
+
+    switch(value) {
+    case 'WATER':
+        return isSolidOrWater(this.get(col - 1, row)) &&
+               isSolidOrWater(this.get(col + 1, row)) &&
+               isSolidOrWater(this.get(col, row + 1));
+    case 'PLANTS':
+        return isEarth(this.get(col, row + 1));
+    default:
+        return true;
+    }
 };
 
 module.exports = Planet;
