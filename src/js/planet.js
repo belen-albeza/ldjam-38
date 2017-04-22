@@ -79,7 +79,7 @@ Planet.prototype.putBiomaWorldXY = function (bioma, worldX, worldY) {
 Planet.prototype._buildInitialData = function(radius, mask) {
     let data = new Array(radius * radius);
     for (let i = 0; i < data.length; i++) {
-        data[i] = REVERSE_BIOMAS[mask[i]] || null;
+        data[i] = this._buildBiomaData(REVERSE_BIOMAS[mask[i]] || null);
     }
     return data;
 };
@@ -88,36 +88,10 @@ Planet.prototype.update = function () {
     this._updateMapFromData();
 };
 
-Planet.prototype._updateMapFromData = function() {
-    for (let row = 0; row < this.radius; row++) {
-        for (let col = 0; col < this.radius; col++) {
-            let bioma = this.data[row * this.radius + col];
-            let tileIndex = null;
-
-            switch (bioma) {
-            case 'DEAD':
-                tileIndex = TILESET.DEAD;
-                break;
-            case 'DESERT':
-                tileIndex = TILESET.DESERT;
-                break;
-            case 'WATER':
-                tileIndex = (this.get(col, row - 1) === 'EMPTY') ?
-                    TILESET.WATER_TOP : TILESET.WATER;
-                break;
-            case 'PLANTS':
-                tileIndex = TILESET.VEG;
-                break;
-            }
-
-            this.map.putTile(tileIndex, col, row);
-        }
-    }
-};
 
 Planet.prototype.get = function(col, row) {
     if (col >= 0 && col < this.radius && row >= 0 && row < this.radius) {
-        return this.data[row * this.radius + col];
+        return this.data[row * this.radius + col].bioma;
     }
     else {
         return null;
@@ -132,7 +106,8 @@ Planet.prototype.set = function(col, row, value) {
     if (col >= 0 && col < this.radius && row >= 0 && row < this.radius) {
         if (this.data[row * this.radius + col] !== null) { // avoid mask
             if (this.validateBioma(col, row, value)) {
-                this.data[row * this.radius + col] = value;
+                this.data[row * this.radius + col] =
+                    this._buildBiomaData(value);
                 return 1;
             }
             else {
@@ -165,6 +140,40 @@ Planet.prototype.validateBioma = function (col, row, value) {
         return isEarth(this.get(col, row + 1));
     default:
         return true;
+    }
+};
+
+Planet.prototype._buildBiomaData = function (bioma) {
+    return {
+        bioma: bioma,
+        water: 0
+    };
+};
+
+Planet.prototype._updateMapFromData = function() {
+    for (let row = 0; row < this.radius; row++) {
+        for (let col = 0; col < this.radius; col++) {
+            let bioma = this.data[row * this.radius + col].bioma;
+            let tileIndex = null;
+
+            switch (bioma) {
+            case 'DEAD':
+                tileIndex = TILESET.DEAD;
+                break;
+            case 'DESERT':
+                tileIndex = TILESET.DESERT;
+                break;
+            case 'WATER':
+                tileIndex = (this.get(col, row - 1) === 'EMPTY') ?
+                    TILESET.WATER_TOP : TILESET.WATER;
+                break;
+            case 'PLANTS':
+                tileIndex = TILESET.VEG;
+                break;
+            }
+
+            this.map.putTile(tileIndex, col, row);
+        }
     }
 };
 
