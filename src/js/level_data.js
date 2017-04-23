@@ -44,6 +44,29 @@ const LEVELS = [
             WATER: 1,
             PLANTS: 1
         }
+    },
+    {
+        map: MASKS.FREESTYLE,
+        goals: [
+            {type: 'block', blockType: 'FOREST', target: 1}
+        ],
+        palette: {
+            DESERT: 4,
+            WATER: 8,
+            PLANTS: 1
+        }
+    },
+    {
+        map: MASKS.FREESTYLE,
+        goals: [
+            {type: 'block', blockType: 'FOREST', target: 4},
+            {type: 'block', blockType: 'PLANTS', target: 4}
+        ],
+        palette: {
+            DESERT: 8,
+            WATER: 8,
+            PLANTS: 8,
+        }
     }
 ];
 
