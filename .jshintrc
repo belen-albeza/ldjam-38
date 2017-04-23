@@ -20,7 +20,7 @@
   "maxlen": 80,
   "maxstatements": 20,
   "maxcomplexity": 9,
-  "maxdepth": 2,
+  "maxdepth": 3,
   "white": true,
   "predef": [
     "Phaser"

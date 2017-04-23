@@ -19,7 +19,7 @@ PlayScene.create = function () {
 
     this.planetLayer = this.game.add.group();
     this.planetLayer.position.set(256, 256);
-    this.planet = new Planet('MEDIUM', this.planetLayer);
+    this.planet = new Planet(this.planetLayer);
 
     this.game.add.image(0, 0, 'mask:medium'); // TODO: adjust to planet size
 
@@ -78,10 +78,9 @@ PlayScene._setupUI = function () {
     // world stats
     this.hudStats = this.game.add.group();
     this.hudStats.position.set(4, 464);
-    this.text = {
-        humidity: this._buildTextLabel(this.hudStats, 0, 0, '0 (dry)'),
-        vegetation: this._buildTextLabel(this.hudStats, 0, 24, '0 (dead)')
-    };
+    this.text.waterStat = this._buildTextLabel(this.hudStats, 0, 0, '0 (dry)');
+    this.text.greenStat = this._buildTextLabel(this.hudStats, 0, 24,
+        '0 (dead)');
 };
 
 PlayScene._buildTextLabel = function (group, x, y, text) {
@@ -118,7 +117,7 @@ PlayScene._handleWorldClick = function (target, pointer) {
 };
 
 PlayScene._snapToGrid = function (value) {
-    return Math.floor(value / Planet.TSIZE) * Planet.TSIZE;
+    return Math.floor(value / Planet.T_SIZE) * Planet.T_SIZE;
 };
 
 module.exports = PlayScene;
