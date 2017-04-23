@@ -18,7 +18,7 @@ TitleScene.create = function () {
     globe.anchor.setTo(0.5);
     this.overlay.add(globe);
 
-    this.game.add.tween(globe).to({y: globe.y + 4}, 1600, Phaser.Easing.InOut,
+    this.game.add.tween(globe).to({y: globe.y + 6}, 1600, Phaser.Easing.InOut,
         true, 0, -1, true);
 
     this._buildOption(128, 416, 'Quest mode', function () {
