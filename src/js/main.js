@@ -1,6 +1,7 @@
 'use strict';
 
 var PlayScene = require('./play_scene.js');
+var TitleScene = require('./title_scene.js');
 
 
 var BootScene = {
@@ -57,10 +58,11 @@ var PreloaderScene = {
         this.game.load.image('button:small', 'images/button_small.png');
         this.game.load.image('button:icon', 'images/button_icon.png');
         this.game.load.image('button:medium', 'images/button_medium.png');
+        this.game.load.image('globe', 'images/globe.png');
     },
 
     create: function () {
-        this.game.state.start('play');
+        this.game.state.start('title');
     }
 };
 
@@ -71,6 +73,7 @@ window.onload = function () {
     game.state.add('boot', BootScene);
     game.state.add('preloader', PreloaderScene);
     game.state.add('play', PlayScene);
+    game.state.add('title', TitleScene);
 
     game.state.start('boot');
 };

@@ -11,7 +11,7 @@ function VictoryCard(parentGroup) {
     this.group.add(game.make.image(0, 0, 'card:small'));
 
     let titleLabel = utils.buildTextLabel(this.group, this.group.width / 2, 16,
-        'Victory!');
+        'Well done');
     titleLabel.label.anchor.setTo(0.5, 0);
 
     this.onClose = new Phaser.Signal();

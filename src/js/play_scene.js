@@ -7,9 +7,6 @@ const BiomaPalette = require('./palette.js');
 const VictoryCard = require('./victory_card.js');
 const GoalsCard = require('./goals_card.js');
 
-// const TSIZE = 32;
-
-
 var PlayScene = {};
 
 PlayScene.init = function (levelIndex) {
@@ -143,7 +140,8 @@ PlayScene._setupUI = function () {
     this.buttons.add(resetButton);
 
     // 'show goals' button
-    let goalsButton = this.game.make.button(504, 504, 'button:medium', function () {
+    let goalsButton = this.game.make.button(504, 504, 'button:medium',
+    function () {
         this._showCard('goals');
     }, this, 0, 0, 0, 0);
     goalsButton.anchor.setTo(1, 1);
@@ -152,8 +150,6 @@ PlayScene._setupUI = function () {
     goalsButton.addChild(goalsLabel.label);
     goalsLabel.label.anchor.setTo(0.5, 0);
     this.buttons.add(goalsButton);
-
-
 
     // modals
     this.hudCards = this.game.add.group();
@@ -190,7 +186,6 @@ PlayScene._handleWorldClick = function (target, pointer) {
     else { // show bioma stats
         let cell = this.planet.getCellXY(pointer.worldX, pointer.worldY);
         console.log(cell);
-        console.log(this.level.getProgress());
     }
 };
 
