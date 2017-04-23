@@ -15,6 +15,7 @@ PlayScene.init = function (levelIndex) {
 
 PlayScene.create = function () {
     this._setupInput();
+    this.camera.flash('#000000');
 
     this.sfx = {
         placed: this.game.add.audio('sfx:placed'),
@@ -64,8 +65,15 @@ PlayScene.resetLevel = function () {
 PlayScene._victory = function () {
     this._showCard('victory');
     this.cards.victory.onClose.addOnce(function () {
-        // TODO: Advance to next level, sfx, etc.
-        this.game.state.restart(true, false, this.level.index);
+        // TODO: show a "you have completed the game" banner when winning
+        //       the last level
+        if (this.level.isLast()) {
+            this.game.state.start('title');
+        }
+        else {
+            this.camera.flash('#000000');
+            this.game.state.restart(true, false, this.level.index + 1);
+        }
     }, this);
 };
 
@@ -104,7 +112,7 @@ PlayScene._updateUI = function () {
 
 PlayScene._setupInput = function () {
     // NOTE: ñapa
-    // See: http://www.html5gamedevs.com/topic/11308-gameinputondown-event-and-textbuttoneventsoninputdown-are-fired-both-when-clicking-on-textbutton/
+    // See: https://goo.gl/N7MwJI
     let bg = this.game.add.sprite(0, 0);
     bg.fixedToCamera = true;
     bg.scale.setTo(this.game.width, this.game.height);
@@ -113,6 +121,7 @@ PlayScene._setupInput = function () {
     bg.events.onInputDown.add(this._handleWorldClick, this);
 };
 
+/*jshint -W071 */
 PlayScene._setupUI = function () {
     this.text = {};
 
@@ -169,6 +178,7 @@ PlayScene._setupUI = function () {
 
     if (!this.level.isFreeStyle()) { this._showCard('goals'); }
 };
+/*jshint +W071 */
 
 PlayScene._handleWorldClick = function (target, pointer) {
     if (this.biomaPalette.currentBioma) { // place bioma in world

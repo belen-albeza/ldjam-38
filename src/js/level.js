@@ -17,8 +17,14 @@ const LEVELS = [
     {
         map: MASKS.FREESTYLE,
         goals: [
-            {type: 'block', blockType: 'WATER', target: 3},
-            {type: 'block', blockType: 'DESERT', target: 5}
+            {type: 'block', blockType: 'DESERT', target: 3}
+        ]
+    },
+    {
+        map: MASKS.FREESTYLE,
+        goals: [
+            {type: 'block', blockType: 'DESERT', target: 2},
+            {type: 'block', blockType: 'SOIL', target: 1}
         ]
     }
 ];
@@ -53,6 +59,14 @@ Level.prototype.update = function (planet) {
             }
         });
     }
+};
+
+Level.prototype.isFirst = function () {
+    return this.index === 0;
+};
+
+Level.prototype.isLast = function () {
+    return this.index === LEVELS.length - 1;
 };
 
 Level.AMOUNT = LEVELS.length;

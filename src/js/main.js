@@ -25,6 +25,7 @@ var BootScene = {
 
 
 var PreloaderScene = {
+    /*jshint -W071 */
     preload: function () {
         this.loadingBar = this.game.add.sprite(0, 240, 'preloader_bar');
         this.loadingBar.anchor.setTo(0, 0.5);
@@ -48,9 +49,7 @@ var PreloaderScene = {
             16, 24);
         this.game.load.spritesheet('icon:misc', 'images/icon_misc.png', 32, 32);
         // images
-        this.game.load.image('mask:tiny', 'images/mask_tiny.png');
         this.game.load.image('mask:medium', 'images/mask_medium.png');
-        this.game.load.image('sky:tiny', 'images/blue_sky_tiny.png');
         this.game.load.image('sky:medium', 'images/blue_sky_medium.png');
         this.game.load.image('card:small', 'images/card_small.png');
         this.game.load.image('card:medium', 'images/card_medium.png');
@@ -60,6 +59,7 @@ var PreloaderScene = {
         this.game.load.image('button:medium', 'images/button_medium.png');
         this.game.load.image('globe', 'images/globe.png');
     },
+    /*jshint +W071 */
 
     create: function () {
         this.game.state.start('title');

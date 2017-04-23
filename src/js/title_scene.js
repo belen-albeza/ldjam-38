@@ -5,6 +5,8 @@ const utils = require('./utils.js');
 var TitleScene = {};
 
 TitleScene.create = function () {
+    this.camera.flash('#000000');
+
     this.overlay = this.game.add.group();
 
     let gameTitle = utils.buildTextLabel(this.overlay, this.game.width / 2, 32,
