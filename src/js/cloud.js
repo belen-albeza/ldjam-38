@@ -31,7 +31,6 @@ Cloud.prototype.reset = function (x, y) {
         this.position.setTo(320 + this.game.rnd.between(0, 320),
             this.game.rnd.between(20, 120));
     }
-    console.log(this.position);
 
     this.body.velocity.x = -this.game.rnd.between(MIN_SPEED, MAX_SPEED);
 

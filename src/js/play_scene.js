@@ -36,9 +36,7 @@ PlayScene.create = function () {
 
     // spawn clouds
     let clouds = this.planet.cloudLayer;
-    // clouds.position.set(this.planetLayer.left, this.planetLayer.top);
     clouds.position.set(-160, -160);
-    // console.log('clouds', clouds.position, clouds.parent.position);
     clouds.add(new Cloud(this.game, 50, 96));
     clouds.add(new Cloud(this.game, 200, 40));
     clouds.add(new Cloud(this.game, 328, 156));
@@ -230,10 +228,6 @@ PlayScene._handleWorldClick = function (target, pointer) {
             this.sfx.error.play();
             break;
         }
-    }
-    else { // show bioma stats
-        // let cell = this.planet.getCellXY(pointer.worldX, pointer.worldY);
-        // console.log(cell);
     }
 };
 
