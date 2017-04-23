@@ -1,56 +1,18 @@
 'use strict';
 
-const MASKS = {
-    FREESTYLE: '@@      @@' +
-               '@        @' +
-               '          ' +
-               '          ' +
-               '          ' +
-               'xxxxxxxxxx' +
-               'xxxxxxxxxx' +
-               'xxxxxxxxxx' +
-               '@xxxxxxxx@' +
-               '@@xxxxxx@@'
-};
+const levelData = require('./level_data.js');
+const LEVELS = levelData.LEVELS;
+const MASKS = levelData.MASKS;
 
-const LEVELS = [
-    {
-        map: MASKS.FREESTYLE,
-        goals: [
-            {type: 'block', blockType: 'DESERT', target: 3}
-        ],
-        palette: {
-            DESERT: 3
-        }
-    },
-    {
-        map: MASKS.FREESTYLE,
-        goals: [
-            {type: 'block', blockType: 'DESERT', target: 2},
-            {type: 'block', blockType: 'SOIL', target: 1}
-        ],
-        palette: {
-            DESERT: 4,
-            WATER: 1
-        }
-    },
-    {
-        map: MASKS.FREESTYLE,
-        goals: [
-            {type: 'block', blockType: 'PLANTS', target: 1},
-        ],
-        palette: {
-            DESERT: 4,
-            WATER: 1,
-            PLANTS: 1
-        }
-    }
-];
 
 function Level(index) {
     this.index = index;
-    this.data = index >= 0 ?
-        LEVELS[index] : {map: MASKS.FREESTYLE, goals: null };
+    // TODO: ñapa for deep cloning. it's better to store all level data in json
+    /*jshint -W014 */
+    this.data = index >= 0
+        ? JSON.parse(JSON.stringify(LEVELS[index]))
+        : { map: MASKS.FREESTYLE, goals: null };
+    /*jshint +W014 */
 }
 
 Level.prototype.consumeBioma = function (bioma) {
@@ -75,6 +37,13 @@ Level.prototype.isVictory = function () {
 
 Level.prototype.isFreeStyle = function () {
     return this.data.goals === null;
+};
+
+Level.prototype.isBudgetDepleted = function () {
+    let palette = this.data.palette;
+    return Object.keys(palette).reduce(function (res, bioma) {
+        return res && (palette[bioma] <= 0);
+    }, true);
 };
 
 Level.prototype.update = function (planet) {

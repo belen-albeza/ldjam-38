@@ -1,3 +1,5 @@
+'use strict';
+
 const TILE_MAPPINGS = {
     DESERT: 1,
     DESERT_VEG: 2,

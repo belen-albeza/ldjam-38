@@ -9,6 +9,8 @@ const GoalsCard = require('./goals_card.js');
 
 const REVERSE_BIOMAS = require('./bioma_const').REVERSE_BIOMAS;
 
+const RESTART_TIMEOUT = Phaser.Timer.SECOND * 5; // TODO: adjust
+
 var PlayScene = {};
 
 PlayScene.init = function (levelIndex) {
@@ -66,6 +68,7 @@ PlayScene.resetLevel = function () {
 
 PlayScene._victory = function () {
     this._showCard('victory');
+    this.isVictory = true;
     this.cards.victory.onClose.addOnce(function () {
         // TODO: show a "you have completed the game" banner when winning
         //       the last level
@@ -154,6 +157,11 @@ PlayScene._setupUI = function () {
     }, this, 1, 1, 1, 1);
     resetButton.anchor.setTo(1, 0);
     this.buttons.add(resetButton);
+    this.restartLabel = utils.buildTextLabel(this.buttons, -36, 6, 'restart?')
+        .label;
+    this.restartLabel.anchor.setTo(1, 0);
+    resetButton.addChild(this.restartLabel);
+    this.restartLabel.visible = false;
 
     // modals
     this.hudCards = this.game.add.group();
@@ -197,6 +205,10 @@ PlayScene._handleWorldClick = function (target, pointer) {
             if (!this.level.isFreeStyle()) {
                 this.level.consumeBioma(
                     REVERSE_BIOMAS[this.biomaPalette.currentBioma]);
+                if (this.level.isBudgetDepleted()) {
+                    this.game.time.events.add(RESTART_TIMEOUT,
+                        this._showResetWarning, this);
+                }
             }
             break;
         case -1: // tile outside bounds
@@ -208,13 +220,21 @@ PlayScene._handleWorldClick = function (target, pointer) {
         }
     }
     else { // show bioma stats
-        let cell = this.planet.getCellXY(pointer.worldX, pointer.worldY);
-        console.log(cell);
+        // let cell = this.planet.getCellXY(pointer.worldX, pointer.worldY);
+        // console.log(cell);
     }
 };
 
 PlayScene._snapToGrid = function (value) {
     return Math.floor(value / Planet.T_SIZE) * Planet.T_SIZE;
+};
+
+PlayScene._showResetWarning = function () {
+    if (!this.isVictory) {
+        this.restartLabel.visible = true;
+        this.game.add.tween(this.restartLabel).to({alpha: 0}, 1000,
+            Phaser.Easing.InOut, true, 0, -1, true);
+    }
 };
 
 module.exports = PlayScene;
