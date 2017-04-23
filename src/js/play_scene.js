@@ -16,6 +16,7 @@ var PlayScene = {};
 
 PlayScene.init = function (levelIndex) {
     this.level = new Level(levelIndex);
+    this.isVictory = false;
 };
 
 PlayScene.create = function () {
@@ -66,7 +67,8 @@ PlayScene.update = function () {
     this.level.update(this.planet);
     this._updateUI();
 
-    if (this.level.isVictory()) {
+    if (this.level.isVictory() && !this.isVictory) {
+        this.isVictory = true;
         this.game.time.events.add(Phaser.Timer.SECOND * 1.5, this._victory,
             this);
     }
@@ -78,7 +80,6 @@ PlayScene.resetLevel = function () {
 
 PlayScene._victory = function () {
     this._showCard('victory');
-    this.isVictory = true;
     this.cards.victory.onClose.addOnce(function () {
         // TODO: show a "you have completed the game" banner when winning
         //       the last level
