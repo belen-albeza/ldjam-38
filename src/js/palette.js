@@ -13,7 +13,9 @@ function Palette(group, sfx) {
         earth: new Phaser.Button(group.game, 0, 36, 'palette',
             this.selectBioma.bind(this, BIOMAS.DESERT, 1), this, 1, 1, 1, 1),
         vegetation: new Phaser.Button(group.game, 0, 72, 'palette',
-            this.selectBioma.bind(this, BIOMAS.PLANTS, 2), this, 2, 2, 2, 2)
+            this.selectBioma.bind(this, BIOMAS.PLANTS, 2), this, 2, 2, 2, 2),
+        remove: new Phaser.Button(group.game, 0, 108, 'palette',
+            this.selectBioma.bind(this, BIOMAS.EMPTY, 3), this, 3, 3, 3, 3)
     };
     Object.keys(this.buttons).forEach(function (key) {
         this.group.add(this.buttons[key]);

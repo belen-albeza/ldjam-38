@@ -143,14 +143,25 @@ Planet.prototype.set = function(col, row, value) {
 };
 
 Planet.prototype.validateBioma = function (col, row, value) {
+    let left = this.get(col - 1, row);
+    let right = this.get(col + 1, row);
+    let up = this.get(col, row - 1);
+    let down = this.get(col, row + 1);
+    let current = this.get(col, row);
+
     switch(value) {
     case 'WATER':
-        return isSolidOrWater(this.get(col - 1, row)) &&
-               isSolidOrWater(this.get(col + 1, row)) &&
-               isSolidOrWater(this.get(col, row + 1));
+        return isSolidOrWater(left) &&
+               isSolidOrWater(right) &&
+               isSolidOrWater(down);
     case 'PLANTS':
-        return this.get(col, row) === 'EMPTY' &&
-            isEarth(this.get(col, row + 1));
+        return current === 'EMPTY' &&
+            isEarth(down);
+    case 'EMPTY':
+        return left !== 'WATER' &&
+               right !== 'WATER' &&
+               up !== 'WATER' &&
+               !isVegetation(up);
     default:
         return true;
     }
