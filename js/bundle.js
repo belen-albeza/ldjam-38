@@ -1,4 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+'use strict';
+
 const TILE_MAPPINGS = {
     DESERT: 1,
     DESERT_VEG: 2,
@@ -37,10 +39,17 @@ const BIOMAS = {
     PLANTS: ','
 };
 
+const REVERSE_BIOMAS = Object.keys(BIOMAS).reduce(function (res, key) {
+    res[BIOMAS[key]] = key;
+    return res;
+}, {});
+
+
 module.exports = {
     MAPPINGS: TILE_MAPPINGS,
     BIOMAS: BIOMAS,
-    ICON_MAPPINGS: ICON_MAPPINGS
+    ICON_MAPPINGS: ICON_MAPPINGS,
+    REVERSE_BIOMAS
 };
 
 },{}],2:[function(require,module,exports){
@@ -113,46 +122,36 @@ GoalsCard.prototype._spawnGoalUI = function (goal, index) {
 
 module.exports = GoalsCard;
 
-},{"./bioma_const.js":1,"./utils.js":9}],3:[function(require,module,exports){
+},{"./bioma_const.js":1,"./utils.js":10}],3:[function(require,module,exports){
 'use strict';
 
-const MASKS = {
-    FREESTYLE: '@@      @@' +
-               '@        @' +
-               '          ' +
-               '          ' +
-               '          ' +
-               'xxxxxxxxxx' +
-               'xxxxxxxxxx' +
-               'xxxxxxxxxx' +
-               '@xxxxxxxx@' +
-               '@@xxxxxx@@'
-};
+const levelData = require('./level_data.js');
+const LEVELS = levelData.LEVELS;
+const MASKS = levelData.MASKS;
 
-const LEVELS = [
-    {
-        map: MASKS.FREESTYLE,
-        goals: [
-            {type: 'block', blockType: 'DESERT', target: 3}
-        ]
-    },
-    {
-        map: MASKS.FREESTYLE,
-        goals: [
-            {type: 'block', blockType: 'DESERT', target: 2},
-            {type: 'block', blockType: 'SOIL', target: 1}
-        ]
-    }
-];
 
 function Level(index) {
     this.index = index;
-    this.data = index >= 0 ?
-        LEVELS[index] : {map: MASKS.FREESTYLE, goals: null };
+    // TODO: ñapa for deep cloning. it's better to store all level data in json
+    /*jshint -W014 */
+    this.data = index >= 0
+        ? JSON.parse(JSON.stringify(LEVELS[index]))
+        : { map: MASKS.FREESTYLE, goals: null };
+    /*jshint +W014 */
 }
+
+Level.prototype.consumeBioma = function (bioma) {
+    if (bioma !== 'EMPTY') {
+        this.data.palette[bioma] -= 1;
+    }
+};
 
 Level.prototype.getProgress = function () {
     return this.data.goals;
+};
+
+Level.prototype.getPalette = function () {
+    return this.data.palette;
 };
 
 Level.prototype.isVictory = function () {
@@ -163,6 +162,13 @@ Level.prototype.isVictory = function () {
 
 Level.prototype.isFreeStyle = function () {
     return this.data.goals === null;
+};
+
+Level.prototype.isBudgetDepleted = function () {
+    let palette = this.data.palette;
+    return Object.keys(palette).reduce(function (res, bioma) {
+        return res && (palette[bioma] <= 0);
+    }, true);
 };
 
 Level.prototype.update = function (planet) {
@@ -189,7 +195,62 @@ Level.AMOUNT = LEVELS.length;
 
 module.exports = Level;
 
-},{}],4:[function(require,module,exports){
+},{"./level_data.js":4}],4:[function(require,module,exports){
+'use strict';
+
+const MASKS = {
+    FREESTYLE: '@@      @@' +
+               '@        @' +
+               '          ' +
+               '          ' +
+               '          ' +
+               'xxxxxxxxxx' +
+               'xxxxxxxxxx' +
+               'xxxxxxxxxx' +
+               '@xxxxxxxx@' +
+               '@@xxxxxx@@'
+};
+
+const LEVELS = [
+    {
+        map: MASKS.FREESTYLE,
+        goals: [
+            {type: 'block', blockType: 'DESERT', target: 3}
+        ],
+        palette: {
+            DESERT: 3
+        }
+    },
+    {
+        map: MASKS.FREESTYLE,
+        goals: [
+            {type: 'block', blockType: 'DESERT', target: 2},
+            {type: 'block', blockType: 'SOIL', target: 1}
+        ],
+        palette: {
+            DESERT: 4,
+            WATER: 1
+        }
+    },
+    {
+        map: MASKS.FREESTYLE,
+        goals: [
+            {type: 'block', blockType: 'PLANTS', target: 1},
+        ],
+        palette: {
+            DESERT: 4,
+            WATER: 1,
+            PLANTS: 1
+        }
+    }
+];
+
+module.exports = {
+    MASKS: MASKS,
+    LEVELS: LEVELS
+};
+
+},{}],5:[function(require,module,exports){
 'use strict';
 
 var PlayScene = require('./play_scene.js');
@@ -256,7 +317,7 @@ var PreloaderScene = {
     create: function () {
         this.game.state.start('title');
         // // TODO: disable this
-        // this.game.state.start('play', true, false, -1);
+        // this.game.state.start('play', true, false, 0);
     }
 };
 
@@ -272,31 +333,39 @@ window.onload = function () {
     game.state.start('boot');
 };
 
-},{"./play_scene.js":7,"./title_scene.js":8}],5:[function(require,module,exports){
+},{"./play_scene.js":8,"./title_scene.js":9}],6:[function(require,module,exports){
 'use strict';
 
 const BIOMAS = require('./bioma_const.js').BIOMAS;
+const utils = require('./utils.js');
 
-function Palette(group, sfx) {
+function Palette(group, sfx, budget) {
     this.group = group;
     this.currentBioma = null;
     this.currentIcon = null;
 
-    this.buttons = {
-        water: new Phaser.Button(group.game, 0, 0, 'palette',
-            this.selectBioma.bind(this, BIOMAS.WATER, 0), this, 0, 0, 0, 0),
-        earth: new Phaser.Button(group.game, 0, 36, 'palette',
-            this.selectBioma.bind(this, BIOMAS.DESERT, 1), this, 1, 1, 1, 1),
-        vegetation: new Phaser.Button(group.game, 0, 72, 'palette',
-            this.selectBioma.bind(this, BIOMAS.PLANTS, 2), this, 2, 2, 2, 2),
-        remove: new Phaser.Button(group.game, 0, 108, 'palette',
-            this.selectBioma.bind(this, BIOMAS.EMPTY, 3), this, 3, 3, 3, 3)
-    };
+    this.buttons = {};
+    this.buttons.WATER = new Phaser.Button(group.game, 0, 0, 'palette',
+        this.selectBioma.bind(this, BIOMAS.WATER, 0), this, 0, 0, 0, 0);
+    this.buttons.DESERT = new Phaser.Button(group.game, 0, 36,
+        'palette', this.selectBioma.bind(this, BIOMAS.DESERT, 1), this, 1, 1,
+        1, 1);
+    this.buttons.PLANTS = new Phaser.Button(group.game, 0, 72,
+        'palette', this.selectBioma.bind(this, BIOMAS.PLANTS, 2), this, 2, 2, 2,
+        2);
+    this.buttons.EMPTY = new Phaser.Button(group.game, 0, 108,
+        'palette', this.selectBioma.bind(this, BIOMAS.EMPTY, 3), this, 3, 3, 3,
+        3);
+
     Object.keys(this.buttons).forEach(function (key) {
         this.group.add(this.buttons[key]);
     }, this);
 
     this.sfx = sfx;
+    if (budget) {
+        this._setupBudgetUI(budget);
+        this.update(budget);
+    }
 }
 
 Palette.prototype.selectBioma = function(bioma, icon) {
@@ -305,23 +374,53 @@ Palette.prototype.selectBioma = function(bioma, icon) {
     this.sfx.play();
 };
 
+Palette.prototype.update = function (budget) {
+    for (let bioma in this.buttons) {
+        if ((!budget[bioma] || budget[bioma] === 0) && bioma !== 'EMPTY') {
+            this.disableBioma(bioma);
+        }
+        if (budget[bioma] >= 0) {
+            this.buttonLabels[bioma].font.text = '' + budget[bioma];
+        }
+    }
+};
+
+Palette.prototype.disableBioma = function (bioma) {
+    let button = this.buttons[bioma];
+    button.inputEnabled = false;
+    button.alpha = 0.2;
+
+    if (this.currentBioma === BIOMAS[bioma]) {
+        this.unselect();
+    }
+};
+
 Palette.prototype.unselect = function () {
     this.currentBioma = null;
     this.currentIcon = null;
 };
 
+
+Palette.prototype._setupBudgetUI = function (budget) {
+    this.buttonLabels = {};
+
+    for (let bioma in budget) {
+        let button = this.buttons[bioma];
+        let amount = utils.buildTextLabel(this.group, 40, 6,
+            '' + budget[bioma]);
+        button.addChild(amount.label);
+        this.buttonLabels[bioma] = amount;
+    }
+};
+
 module.exports = Palette;
 
-},{"./bioma_const.js":1}],6:[function(require,module,exports){
+},{"./bioma_const.js":1,"./utils.js":10}],7:[function(require,module,exports){
 'use strict';
 
 let bioData = require('./bioma_const.js');
-const BIOMAS = bioData.BIOMAS;
 const TILESET = bioData.MAPPINGS;
-const REVERSE_BIOMAS = Object.keys(BIOMAS).reduce(function (res, key) {
-    res[BIOMAS[key]] = key;
-    return res;
-}, {});
+const REVERSE_BIOMAS = bioData.REVERSE_BIOMAS;
 
 const MAX_WATER = {
     SOIL: 40,
@@ -690,7 +789,7 @@ Planet.prototype._updateWaterStats = function () {
 
 module.exports = Planet;
 
-},{"./bioma_const.js":1}],7:[function(require,module,exports){
+},{"./bioma_const.js":1}],8:[function(require,module,exports){
 'use strict';
 
 const utils = require('./utils.js');
@@ -699,6 +798,10 @@ const Planet = require('./planet.js');
 const BiomaPalette = require('./palette.js');
 const VictoryCard = require('./victory_card.js');
 const GoalsCard = require('./goals_card.js');
+
+const REVERSE_BIOMAS = require('./bioma_const').REVERSE_BIOMAS;
+
+const RESTART_TIMEOUT = Phaser.Timer.SECOND * 5; // TODO: adjust
 
 var PlayScene = {};
 
@@ -746,7 +849,7 @@ PlayScene.update = function () {
     this._updateUI();
 
     if (this.level.isVictory()) {
-        this.game.time.events.add(Phaser.Timer.SECOND * 0.5, this._victory,
+        this.game.time.events.add(Phaser.Timer.SECOND * 1.5, this._victory,
             this);
     }
 };
@@ -757,6 +860,7 @@ PlayScene.resetLevel = function () {
 
 PlayScene._victory = function () {
     this._showCard('victory');
+    this.isVictory = true;
     this.cards.victory.onClose.addOnce(function () {
         // TODO: show a "you have completed the game" banner when winning
         //       the last level
@@ -801,6 +905,10 @@ PlayScene._updateUI = function () {
     this.text.greenStat.font.text = this.planet.stats.normalizedGreen + ' (' +
         this.planet.stats.greenLabel + ')';
 
+    // update palette
+    if (!this.level.isFreeStyle()) {
+        this.biomaPalette.update(this.level.getPalette());
+    }
 };
 
 PlayScene._setupInput = function () {
@@ -821,7 +929,8 @@ PlayScene._setupUI = function () {
     // create bioma palette
     this.hudPalette = this.game.add.group();
     this.hudPalette.position.set(4, 4);
-    this.biomaPalette = new BiomaPalette(this.hudPalette, this.sfx.select);
+    this.biomaPalette = new BiomaPalette(this.hudPalette, this.sfx.select,
+        this.level.isFreeStyle() ? null : this.level.getPalette());
 
     // world stats
     this.hudStats = this.game.add.group();
@@ -840,6 +949,11 @@ PlayScene._setupUI = function () {
     }, this, 1, 1, 1, 1);
     resetButton.anchor.setTo(1, 0);
     this.buttons.add(resetButton);
+    this.restartLabel = utils.buildTextLabel(this.buttons, -36, 6, 'restart?')
+        .label;
+    this.restartLabel.anchor.setTo(1, 0);
+    resetButton.addChild(this.restartLabel);
+    this.restartLabel.visible = false;
 
     // modals
     this.hudCards = this.game.add.group();
@@ -880,6 +994,14 @@ PlayScene._handleWorldClick = function (target, pointer) {
         switch (placedOutcome) {
         case 1: // placement was ok
             this.sfx.placed.play();
+            if (!this.level.isFreeStyle()) {
+                this.level.consumeBioma(
+                    REVERSE_BIOMAS[this.biomaPalette.currentBioma]);
+                if (this.level.isBudgetDepleted()) {
+                    this.game.time.events.add(RESTART_TIMEOUT,
+                        this._showResetWarning, this);
+                }
+            }
             break;
         case -1: // tile outside bounds
             this.biomaPalette.unselect();
@@ -890,8 +1012,8 @@ PlayScene._handleWorldClick = function (target, pointer) {
         }
     }
     else { // show bioma stats
-        let cell = this.planet.getCellXY(pointer.worldX, pointer.worldY);
-        console.log(cell);
+        // let cell = this.planet.getCellXY(pointer.worldX, pointer.worldY);
+        // console.log(cell);
     }
 };
 
@@ -899,9 +1021,17 @@ PlayScene._snapToGrid = function (value) {
     return Math.floor(value / Planet.T_SIZE) * Planet.T_SIZE;
 };
 
+PlayScene._showResetWarning = function () {
+    if (!this.isVictory) {
+        this.restartLabel.visible = true;
+        this.game.add.tween(this.restartLabel).to({alpha: 0}, 1000,
+            Phaser.Easing.InOut, true, 0, -1, true);
+    }
+};
+
 module.exports = PlayScene;
 
-},{"./goals_card.js":2,"./level.js":3,"./palette.js":5,"./planet.js":6,"./utils.js":9,"./victory_card.js":10}],8:[function(require,module,exports){
+},{"./bioma_const":1,"./goals_card.js":2,"./level.js":3,"./palette.js":6,"./planet.js":7,"./utils.js":10,"./victory_card.js":11}],9:[function(require,module,exports){
 'use strict';
 
 const utils = require('./utils.js');
@@ -949,7 +1079,7 @@ TitleScene._buildOption = function (x, y, text, callback) {
 
 module.exports = TitleScene;
 
-},{"./utils.js":9}],9:[function(require,module,exports){
+},{"./utils.js":10}],10:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -965,7 +1095,7 @@ module.exports = {
     }
 };
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 'use strict';
 
 const utils = require('./utils.js');
@@ -1012,4 +1142,4 @@ VictoryCard.prototype.hide = function () {
 
 module.exports = VictoryCard;
 
-},{"./utils.js":9}]},{},[4]);
+},{"./utils.js":10}]},{},[5]);
