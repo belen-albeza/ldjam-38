@@ -75,6 +75,8 @@ var PreloaderScene = {
         this.game.load.image('tileset', 'images/biomas_tileset.png');
         this.game.load.spritesheet('palette', 'images/bioma_palette.png',
             32, 32);
+        this.game.load.spritesheet('icon:stats', 'images/icon_stats.png',
+            16, 24);
         // images
         this.game.load.image('mask:tiny', 'images/mask_tiny.png');
         this.game.load.image('mask:medium', 'images/mask_medium.png');
@@ -186,6 +188,7 @@ function Planet(group) {
     this.game = group.game;
 
     this.data = this._buildInitialData(MASKS.FREESTYLE);
+    this.stats = {};
 
     // create sky
     this.sky = this.group.create(0, 0, 'sky:medium'); // TODO: adjust to SIZE
@@ -197,7 +200,8 @@ function Planet(group) {
     this.mapLayer = this.map.create('main', SIZE, SIZE, T_SIZE, T_SIZE,
         group);
     this.mapLayer.anchor.setTo(0.5);
-    this._updateMapFromData();
+
+    this.update();
 }
 
 Planet.T_SIZE = T_SIZE;
@@ -206,6 +210,7 @@ Planet.SIZE = SIZE;
 
 Planet.prototype.update = function () {
     this._updateMapFromData();
+    this._updateGlobalStats();
 };
 
 Planet.prototype.tick = function () {
@@ -227,61 +232,7 @@ Planet.prototype.tick = function () {
     }
 };
 
-Planet.prototype._tickWaterLevel = function (cell, col, row) {
-    let oldWater = cell.water;
-    if (this.get(col - 1, row) === 'WATER') { cell.water++; }
-    if (this.get(col + 1, row) === 'WATER') { cell.water++; }
-    if (this.get(col, row + 1) === 'WATER') { cell.water++; }
-    if (this.get(col, row - 1) === 'WATER') { cell.water++; }
 
-    if (cell.water - oldWater === 0) {
-        cell.water--;
-    }
-
-    cell.water = Math.max(0, Math.min(cell.water, MAX_WATER[cell.bioma]));
-};
-
-/*jshint -W074 */
-Planet.prototype._tickCell = function (cell, col, row) {
-    let upper = this.get(col, row - 1, true);
-
-    // soil, desert
-    if (isEarth(cell.bioma)) {
-        this._tickWaterLevel(cell, col, row);
-    }
-
-    switch(cell.bioma) {
-    case 'DESERT':
-        // loss of plants when no water
-        if (cell.water === 0 && upper.bioma === 'PLANTS') {
-            upper.shiftTo = 'EMPTY';
-        }
-        // shift from desert to soil when humid enough
-        else if (cell.water >= MAX_WATER.DESERT) {
-            cell.shiftTo = 'SOIL';
-        }
-        break;
-    case 'SOIL':
-        // desertification and loss of plants when no water
-        if (cell.water === 0) {
-            if (upper.bioma === 'PLANTS') { upper.shiftTo = 'EMPTY'; }
-            cell.shiftTo = 'DESERT';
-        }
-        // grow plants on soil with water
-        else if (upper.bioma === 'EMPTY' &&
-        cell.water >= SOIL_NO_VEG_MAX_WATER) {
-            // upper.shiftTo = 'PLANTS';
-        }
-        // ungrown plants on soil when loss of water
-        else if (upper.bioma === 'PLANTS' &&
-        cell.water < SOIL_NO_VEG_MAX_WATER) {
-            upper.shiftTo = 'EMPTY';
-        }
-
-        break;
-    }
-};
-/*jshint +W074 */
 
 Planet.prototype.prettyPrint = function () {
     let txt = '';
@@ -302,8 +253,6 @@ Planet.prototype.putBiomaWorldXY = function (bioma, worldX, worldY) {
     let row = Math.floor(y / T_SIZE);
     return this.set(col, row, REVERSE_BIOMAS[bioma]);
 };
-
-
 
 Planet.prototype.getCellXY = function (worldX, worldY) {
     let x = worldX - (this.group.x + this.mapLayer.left);
@@ -374,7 +323,6 @@ Planet.prototype._applyPlacementEffects = function (col, row) {
     }
 };
 
-
 Planet.prototype._buildInitialData = function(mask) {
     let data = new Array(SIZE * SIZE);
     for (let i = 0; i < data.length; i++) {
@@ -426,6 +374,118 @@ Planet.prototype._updateMapFromData = function() {
 };
 /*jshint +W074 */
 
+Planet.prototype._tickWaterLevel = function (cell, col, row) {
+    let oldWater = cell.water;
+    if (this.get(col - 1, row) === 'WATER') { cell.water++; }
+    if (this.get(col + 1, row) === 'WATER') { cell.water++; }
+    if (this.get(col, row + 1) === 'WATER') { cell.water++; }
+    if (this.get(col, row - 1) === 'WATER') { cell.water++; }
+
+    if (cell.water - oldWater === 0) {
+        cell.water--;
+    }
+
+    cell.water = Math.max(0, Math.min(cell.water, MAX_WATER[cell.bioma]));
+};
+
+/*jshint -W074 */
+Planet.prototype._tickCell = function (cell, col, row) {
+    let upper = this.get(col, row - 1, true);
+
+    // soil, desert
+    if (isEarth(cell.bioma)) {
+        this._tickWaterLevel(cell, col, row);
+    }
+
+    switch(cell.bioma) {
+    case 'DESERT':
+        // loss of plants when no water
+        if (cell.water === 0 && upper.bioma === 'PLANTS') {
+            upper.shiftTo = 'EMPTY';
+        }
+        // shift from desert to soil when humid enough
+        else if (cell.water >= MAX_WATER.DESERT) {
+            cell.shiftTo = 'SOIL';
+        }
+        break;
+    case 'SOIL':
+        // desertification and loss of plants when no water
+        if (cell.water === 0) {
+            if (upper.bioma === 'PLANTS') { upper.shiftTo = 'EMPTY'; }
+            cell.shiftTo = 'DESERT';
+        }
+        // grow plants on soil with water
+        else if (upper.bioma === 'EMPTY' &&
+        cell.water >= SOIL_NO_VEG_MAX_WATER) {
+            // upper.shiftTo = 'PLANTS';
+        }
+        // ungrown plants on soil when loss of water
+        else if (upper.bioma === 'PLANTS' &&
+        cell.water < SOIL_NO_VEG_MAX_WATER) {
+            upper.shiftTo = 'EMPTY';
+        }
+
+        break;
+    }
+};
+/*jshint +W074 */
+
+Planet.prototype._updateGlobalStats = function () {
+    this._updateWaterStats();
+    this._updateGreenStats();
+};
+
+Planet.prototype._updateGreenStats = function () {
+    const GREEN_PLANTS = 1;
+    const GREEN_JUNGLE = 3;
+
+    const GREEN_GREEN = 10;
+    const GREEN_LUSH = 20;
+
+    this.stats.green = this.data.reduce(function (res, cell) {
+        let level = 0;
+        if (cell.bioma === 'PLANTS') { level += GREEN_PLANTS; }
+        // TODO: forest and jungle
+        return res + level;
+    }, 0);
+
+    this.stats.normalizedGreen = Math.floor(100 * (
+        this.stats.green / (this.data.length * GREEN_JUNGLE)));
+
+    this.stats.greenLabel = 'barren';
+    if (this.stats.normalizedGreen >= GREEN_GREEN) {
+        this.stats.greenLabel = 'green';
+    }
+    if (this.stats.normalizedGreen >= GREEN_LUSH) {
+        this.stats.greenLabel = 'lush';
+    }
+};
+
+Planet.prototype._updateWaterStats = function () {
+    const WATER_WATER = 6;
+    const WATER_SOIL = 2;
+    const WATER_NEUTRAL = 8;
+    const WATER_HUMID = 16;
+
+    this.stats.water = this.data.reduce(function (res, cell) {
+        let level = 0;
+        if (cell.bioma === 'WATER') { level += WATER_WATER; }
+        if (cell.bioma === 'SOIL') { level += WATER_SOIL; }
+        return res + level;
+    }, 0);
+
+    this.stats.normalizedWater = Math.floor(100 * (
+        this.stats.water / (this.data.length * WATER_WATER)));
+
+    this.stats.waterLabel = 'dry';
+    if (this.stats.normalizedWater >= WATER_NEUTRAL) {
+        this.stats.waterLabel = 'neutral';
+    }
+    if (this.stats.normalizedWater >= WATER_HUMID) {
+        this.stats.waterLabel = 'humid';
+    }
+};
+
 module.exports = Planet;
 
 },{"./bioma_const.js":1}],5:[function(require,module,exports){
@@ -467,6 +527,17 @@ PlayScene.create = function () {
 PlayScene.update = function () {
     this.planet.update();
 
+    this._updateUI();
+
+    // apply bioma cycles to planet
+    this.frameCounter++;
+    if (this.frameCounter === 15) {
+        this.planet.tick();
+        this.frameCounter = 0;
+    }
+};
+
+PlayScene._updateUI = function () {
     // update bioma cursor
     this.cursorSprite.x = this._snapToGrid(this.game.input.x);
     this.cursorSprite.y = this._snapToGrid(this.game.input.y);
@@ -479,12 +550,11 @@ PlayScene.update = function () {
         this.cursorSprite.visible = false;
     }
 
-    // apply bioma cycles to planet
-    this.frameCounter++;
-    if (this.frameCounter === 15) {
-        this.planet.tick();
-        this.frameCounter = 0;
-    }
+    // update stats labels
+    this.text.waterStat.font.text = this.planet.stats.normalizedWater + ' (' +
+        this.planet.stats.waterLabel + ')';
+    this.text.greenStat.font.text = this.planet.stats.normalizedGreen + ' (' +
+        this.planet.stats.greenLabel + ')';
 };
 
 PlayScene._setupInput = function () {
@@ -509,9 +579,11 @@ PlayScene._setupUI = function () {
     // world stats
     this.hudStats = this.game.add.group();
     this.hudStats.position.set(4, 464);
-    this.text.waterStat = this._buildTextLabel(this.hudStats, 0, 0, '0 (dry)');
-    this.text.greenStat = this._buildTextLabel(this.hudStats, 0, 24,
-        '0 (dead)');
+    this.hudStats.create(0, 0, 'icon:stats', 0);
+    this.hudStats.create(0, 24, 'icon:stats', 1);
+    this.text.waterStat = this._buildTextLabel(this.hudStats, 20, 0, '0 (dry)');
+    this.text.greenStat = this._buildTextLabel(this.hudStats, 20, 24,
+        '0 (barren)');
 };
 
 PlayScene._buildTextLabel = function (group, x, y, text) {
