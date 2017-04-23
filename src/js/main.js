@@ -30,14 +30,18 @@ var PreloaderScene = {
         this.load.setPreloadSprite(this.loadingBar);
 
         // load assets for the game
+
+        // audio files
         this.game.load.audio('sfx:select', 'audio/select.wav');
         this.game.load.audio('sfx:placed', 'audio/placed.wav');
         this.game.load.audio('sfx:error', 'audio/error.wav');
-
+        // fonts
+        this.game.load.image('font', 'images/retrofont.png');
+        // tilesets and spritesheets
         this.game.load.image('tileset', 'images/biomas_tileset.png');
         this.game.load.spritesheet('palette', 'images/bioma_palette.png',
             32, 32);
-
+        // images
         this.game.load.image('mask:tiny', 'images/mask_tiny.png');
         this.game.load.image('mask:medium', 'images/mask_medium.png');
         this.game.load.image('sky:tiny', 'images/blue_sky_tiny.png');

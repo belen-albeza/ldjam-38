@@ -23,10 +23,7 @@ PlayScene.create = function () {
 
     this.game.add.image(0, 0, 'mask:medium'); // TODO: adjust to planet size
 
-    // create bioma palette
-    this.hud = this.game.add.group();
-    this.hud.position.set(520, 8);
-    this.biomaPalette = new BiomaPalette(this.hud, this.sfx.select);
+    this._setupUI();
 
     // cursor
     this.cursorSprite = this.game.add.image(0, 0, 'palette');
@@ -68,6 +65,34 @@ PlayScene._setupInput = function () {
     bg.inputEnabled = true;
     bg.input.priorityID = 0; // lower priority
     bg.events.onInputDown.add(this._handleWorldClick, this);
+};
+
+PlayScene._setupUI = function () {
+    this.text = {};
+
+    // create bioma palette
+    this.hudPalette = this.game.add.group();
+    this.hudPalette.position.set(520, 8);
+    this.biomaPalette = new BiomaPalette(this.hudPalette, this.sfx.select);
+
+    // world stats
+    this.hudStats = this.game.add.group();
+    this.hudStats.position.set(4, 464);
+    this.text = {
+        humidity: this._buildTextLabel(this.hudStats, 0, 0, '0 (dry)'),
+        vegetation: this._buildTextLabel(this.hudStats, 0, 24, '0 (dead)')
+    };
+};
+
+PlayScene._buildTextLabel = function (group, x, y, text) {
+    let font = this.game.add.retroFont('font', 16, 24,
+        Phaser.RetroFont.TEXT_SET6);
+    let label = this.game.make.image(x, y, font);
+
+    group.add(label);
+    if (text) { font.text = text; }
+
+    return {font: font, label: label};
 };
 
 PlayScene._handleWorldClick = function (target, pointer) {
