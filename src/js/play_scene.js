@@ -36,6 +36,17 @@ PlayScene.create = function () {
 PlayScene.update = function () {
     this.planet.update();
 
+    this._updateUI();
+
+    // apply bioma cycles to planet
+    this.frameCounter++;
+    if (this.frameCounter === 15) {
+        this.planet.tick();
+        this.frameCounter = 0;
+    }
+};
+
+PlayScene._updateUI = function () {
     // update bioma cursor
     this.cursorSprite.x = this._snapToGrid(this.game.input.x);
     this.cursorSprite.y = this._snapToGrid(this.game.input.y);
@@ -48,12 +59,11 @@ PlayScene.update = function () {
         this.cursorSprite.visible = false;
     }
 
-    // apply bioma cycles to planet
-    this.frameCounter++;
-    if (this.frameCounter === 15) {
-        this.planet.tick();
-        this.frameCounter = 0;
-    }
+    // update stats labels
+    this.text.waterStat.font.text = this.planet.stats.normalizedWater + ' (' +
+        this.planet.stats.waterLabel + ')';
+    this.text.greenStat.font.text = this.planet.stats.normalizedGreen + ' (' +
+        this.planet.stats.greenLabel + ')';
 };
 
 PlayScene._setupInput = function () {
@@ -78,9 +88,11 @@ PlayScene._setupUI = function () {
     // world stats
     this.hudStats = this.game.add.group();
     this.hudStats.position.set(4, 464);
-    this.text.waterStat = this._buildTextLabel(this.hudStats, 0, 0, '0 (dry)');
-    this.text.greenStat = this._buildTextLabel(this.hudStats, 0, 24,
-        '0 (dead)');
+    this.hudStats.create(0, 0, 'icon:stats', 0);
+    this.hudStats.create(0, 24, 'icon:stats', 1);
+    this.text.waterStat = this._buildTextLabel(this.hudStats, 20, 0, '0 (dry)');
+    this.text.greenStat = this._buildTextLabel(this.hudStats, 20, 24,
+        '0 (barren)');
 };
 
 PlayScene._buildTextLabel = function (group, x, y, text) {

@@ -41,6 +41,8 @@ var PreloaderScene = {
         this.game.load.image('tileset', 'images/biomas_tileset.png');
         this.game.load.spritesheet('palette', 'images/bioma_palette.png',
             32, 32);
+        this.game.load.spritesheet('icon:stats', 'images/icon_stats.png',
+            16, 24);
         // images
         this.game.load.image('mask:tiny', 'images/mask_tiny.png');
         this.game.load.image('mask:medium', 'images/mask_medium.png');
