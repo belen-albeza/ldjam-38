@@ -366,6 +366,9 @@ Planet.prototype._updateMapFromData = function() {
             case 'PLANTS':
                 tileIndex = TILESET.VEG;
                 break;
+            case 'FOREST':
+                tileIndex = TILESET.FOREST;
+                break;
             }
 
             this.map.putTile(tileIndex, col, row);
@@ -391,6 +394,7 @@ Planet.prototype._tickWaterLevel = function (cell, col, row) {
 /*jshint -W074 */
 Planet.prototype._tickCell = function (cell, col, row) {
     let upper = this.get(col, row - 1, true);
+    let lower = this.get(col, row + 1, true);
 
     // soil, desert
     if (isEarth(cell.bioma)) {
@@ -399,8 +403,9 @@ Planet.prototype._tickCell = function (cell, col, row) {
 
     switch(cell.bioma) {
     case 'DESERT':
-        // loss of plants when no water
-        if (cell.water === 0 && upper.bioma === 'PLANTS') {
+        // loss of plants when no water and dry world
+        if (cell.water === 0 && upper.bioma === 'PLANTS' &&
+        this.stats.waterLabel === 'dry') {
             upper.shiftTo = 'EMPTY';
         }
         // shift from desert to soil when humid enough
@@ -414,17 +419,24 @@ Planet.prototype._tickCell = function (cell, col, row) {
             if (upper.bioma === 'PLANTS') { upper.shiftTo = 'EMPTY'; }
             cell.shiftTo = 'DESERT';
         }
-        // grow plants on soil with water
-        else if (upper.bioma === 'EMPTY' &&
-        cell.water >= SOIL_NO_VEG_MAX_WATER) {
-            // upper.shiftTo = 'PLANTS';
-        }
         // ungrown plants on soil when loss of water
         else if (upper.bioma === 'PLANTS' &&
         cell.water < SOIL_NO_VEG_MAX_WATER) {
             upper.shiftTo = 'EMPTY';
         }
 
+        break;
+    case 'PLANTS':
+        // shift to forest if on soil and not dry world
+        if (lower.bioma === 'SOIL' && this.stats.waterLabel !== 'dry') {
+            cell.shiftTo = 'FOREST';
+        }
+        break;
+    case 'FOREST':
+        // shift to plants if world is dry
+        if (this.stats.waterLabel === 'dry') {
+            cell.shiftTo = 'PLANTS';
+        }
         break;
     }
 };
