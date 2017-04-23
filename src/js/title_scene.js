@@ -23,7 +23,7 @@ TitleScene.create = function () {
         this.game.state.start('play', true, false, 0);
     });
     this._buildOption(384, 416, 'Freestyle', function () {
-        // this.game.state.start('play', true, false, -1);
+        this.game.state.start('play', true, false, -1);
     });
 };
 

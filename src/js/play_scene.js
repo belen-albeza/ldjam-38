@@ -10,7 +10,7 @@ const GoalsCard = require('./goals_card.js');
 var PlayScene = {};
 
 PlayScene.init = function (levelIndex) {
-    this.level = new Level(levelIndex || 0);
+    this.level = new Level(levelIndex);
 };
 
 PlayScene.create = function () {
@@ -58,14 +58,14 @@ PlayScene.update = function () {
 };
 
 PlayScene.resetLevel = function () {
-    this.game.state.restart();
+    this.game.state.restart(true, false, this.level.index);
 };
 
 PlayScene._victory = function () {
     this._showCard('victory');
     this.cards.victory.onClose.addOnce(function () {
         // TODO: Advance to next level, sfx, etc.
-        this.game.state.restart();
+        this.game.state.restart(true, false, this.level.index);
     }, this);
 };
 
@@ -139,32 +139,35 @@ PlayScene._setupUI = function () {
     resetButton.anchor.setTo(1, 0);
     this.buttons.add(resetButton);
 
-    // 'show goals' button
-    let goalsButton = this.game.make.button(504, 504, 'button:medium',
-    function () {
-        this._showCard('goals');
-    }, this, 0, 0, 0, 0);
-    goalsButton.anchor.setTo(1, 1);
-    let goalsLabel = utils.buildTextLabel(this.buttons, -goalsButton.width / 2,
-        -goalsButton.height + 6, 'Goals');
-    goalsButton.addChild(goalsLabel.label);
-    goalsLabel.label.anchor.setTo(0.5, 0);
-    this.buttons.add(goalsButton);
-
     // modals
     this.hudCards = this.game.add.group();
+    this.hudCards.visible = false;
     let modalBg = this.hudCards.create(0, 0, 'bg:modal');
     modalBg.inputEnabled = true;
-    this.cards = {
-        victory: new VictoryCard(this.hudCards),
-        goals: new GoalsCard(this.hudCards, this.level.getProgress())
-    };
-    this.cards.goals.onClose.add(function () {
-        this._hideCard();
-    }, this);
-    this.hudCards.visible = false;
+    this.cards = {};
+    this.cards.victory = new VictoryCard(this.hudCards);
 
-    this._showCard('goals');
+    // 'show goals' button and modal
+    if (!this.level.isFreeStyle()) {
+        let goalsButton = this.game.make.button(504, 504, 'button:medium',
+        function () {
+            this._showCard('goals');
+        }, this, 0, 0, 0, 0);
+        goalsButton.anchor.setTo(1, 1);
+        let goalsLabel = utils.buildTextLabel(this.buttons,
+            -goalsButton.width / 2, -goalsButton.height + 6, 'Goals');
+        goalsButton.addChild(goalsLabel.label);
+        goalsLabel.label.anchor.setTo(0.5, 0);
+        this.buttons.add(goalsButton);
+
+        this.cards.goals =  new GoalsCard(this.hudCards,
+            this.level.getProgress());
+        this.cards.goals.onClose.add(function () {
+            this._hideCard();
+        }, this);
+    }
+
+    if (!this.level.isFreeStyle()) { this._showCard('goals'); }
 };
 
 PlayScene._handleWorldClick = function (target, pointer) {
