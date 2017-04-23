@@ -17,7 +17,8 @@ const LEVELS = [
     {
         map: MASKS.FREESTYLE,
         goals: [
-            {type: 'block', blockType: 'WATER', target: 3}
+            {type: 'block', blockType: 'WATER', target: 3},
+            {type: 'block', blockType: 'DESERT', target: 5}
         ]
     }
 ];

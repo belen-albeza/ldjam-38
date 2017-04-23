@@ -5,6 +5,7 @@ const Level = require('./level.js');
 const Planet = require('./planet.js');
 const BiomaPalette = require('./palette.js');
 const VictoryCard = require('./victory_card.js');
+const GoalsCard = require('./goals_card.js');
 
 // const TSIZE = 32;
 
@@ -77,8 +78,10 @@ PlayScene._showCard = function (which) {
 };
 
 PlayScene._hideCard = function () {
-    // TODO
     this.isModalActive = false;
+    Object.keys(this.cards).forEach(function (key) {
+        this.cards[key].hide();
+    }, this);
 };
 
 PlayScene._updateUI = function () {
@@ -131,20 +134,41 @@ PlayScene._setupUI = function () {
         '0 (barren)');
 
     // reset button
-    let resetButton = this.game.add.button(508, 4, 'icon:misc', function () {
+    this.buttons = this.game.add.group();
+    let resetButton = this.game.make.button(508, 4, 'icon:misc', function () {
         this.sfx.select.play(); // TODO: pick a different sound for reloading?
         this.resetLevel();
     }, this, 1, 1, 1, 1);
     resetButton.anchor.setTo(1, 0);
+    this.buttons.add(resetButton);
+
+    // 'show goals' button
+    let goalsButton = this.game.make.button(504, 504, 'button:medium', function () {
+        this._showCard('goals');
+    }, this, 0, 0, 0, 0);
+    goalsButton.anchor.setTo(1, 1);
+    let goalsLabel = utils.buildTextLabel(this.buttons, -goalsButton.width / 2,
+        -goalsButton.height + 6, 'Goals');
+    goalsButton.addChild(goalsLabel.label);
+    goalsLabel.label.anchor.setTo(0.5, 0);
+    this.buttons.add(goalsButton);
+
+
 
     // modals
     this.hudCards = this.game.add.group();
     let modalBg = this.hudCards.create(0, 0, 'bg:modal');
     modalBg.inputEnabled = true;
     this.cards = {
-        victory: new VictoryCard(this.hudCards)
+        victory: new VictoryCard(this.hudCards),
+        goals: new GoalsCard(this.hudCards, this.level.getProgress())
     };
+    this.cards.goals.onClose.add(function () {
+        this._hideCard();
+    }, this);
     this.hudCards.visible = false;
+
+    this._showCard('goals');
 };
 
 PlayScene._handleWorldClick = function (target, pointer) {

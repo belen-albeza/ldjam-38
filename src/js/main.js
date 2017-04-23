@@ -39,6 +39,8 @@ var PreloaderScene = {
         this.game.load.image('font', 'images/retrofont.png');
         // tilesets and spritesheets
         this.game.load.image('tileset', 'images/biomas_tileset.png');
+        this.game.load.spritesheet('icon:tileset', 'images/biomas_tileset.png',
+            32, 32);
         this.game.load.spritesheet('palette', 'images/bioma_palette.png',
             32, 32);
         this.game.load.spritesheet('icon:stats', 'images/icon_stats.png',
@@ -50,8 +52,11 @@ var PreloaderScene = {
         this.game.load.image('sky:tiny', 'images/blue_sky_tiny.png');
         this.game.load.image('sky:medium', 'images/blue_sky_medium.png');
         this.game.load.image('card:small', 'images/card_small.png');
+        this.game.load.image('card:medium', 'images/card_medium.png');
         this.game.load.image('bg:modal', 'images/modal_bg.png');
         this.game.load.image('button:small', 'images/button_small.png');
+        this.game.load.image('button:icon', 'images/button_icon.png');
+        this.game.load.image('button:medium', 'images/button_medium.png');
     },
 
     create: function () {
