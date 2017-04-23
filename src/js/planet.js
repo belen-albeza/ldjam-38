@@ -258,8 +258,9 @@ Planet.prototype._tickCell = function (cell, col, row) {
 
     switch(cell.bioma) {
     case 'DESERT':
-        // loss of plants when no water
-        if (cell.water === 0 && upper.bioma === 'PLANTS') {
+        // loss of plants when no water and dry world
+        if (cell.water === 0 && upper.bioma === 'PLANTS' &&
+        this.stats.waterLabel !== 'humid') {
             upper.shiftTo = 'EMPTY';
         }
         // shift from desert to soil when humid enough
