@@ -242,6 +242,29 @@ const LEVELS = [
             WATER: 1,
             PLANTS: 1
         }
+    },
+    {
+        map: MASKS.FREESTYLE,
+        goals: [
+            {type: 'block', blockType: 'FOREST', target: 1}
+        ],
+        palette: {
+            DESERT: 4,
+            WATER: 8,
+            PLANTS: 1
+        }
+    },
+    {
+        map: MASKS.FREESTYLE,
+        goals: [
+            {type: 'block', blockType: 'FOREST', target: 4},
+            {type: 'block', blockType: 'PLANTS', target: 4}
+        ],
+        palette: {
+            DESERT: 8,
+            WATER: 8,
+            PLANTS: 8,
+        }
     }
 ];
 
@@ -290,6 +313,7 @@ var PreloaderScene = {
         this.game.load.audio('sfx:select', 'audio/select.wav');
         this.game.load.audio('sfx:placed', 'audio/placed.wav');
         this.game.load.audio('sfx:error', 'audio/error.wav');
+        this.game.load.audio('track:bgm', ['audio/bgm.mp3', 'audio/bgm.ogg']);
         // fonts
         this.game.load.image('font', 'images/retrofont.png');
         // tilesets and spritesheets
@@ -317,7 +341,7 @@ var PreloaderScene = {
     create: function () {
         this.game.state.start('title');
         // // TODO: disable this
-        // this.game.state.start('play', true, false, 0);
+        // this.game.state.start('play', true, false, 4);
     }
 };
 
@@ -818,6 +842,8 @@ PlayScene.create = function () {
         error: this.game.add.audio('sfx:error'),
         select: this.game.add.audio('sfx:select')
     };
+    this.song = this.game.add.audio('track:bgm');
+    this.song.fadeIn(2000, true);
 
     this.planetLayer = this.game.add.group();
     this.planetLayer.position.set(256, 256);
@@ -1027,6 +1053,10 @@ PlayScene._showResetWarning = function () {
         this.game.add.tween(this.restartLabel).to({alpha: 0}, 1000,
             Phaser.Easing.InOut, true, 0, -1, true);
     }
+};
+
+PlayScene.shutdown = function () {
+    this.song.stop();
 };
 
 module.exports = PlayScene;
