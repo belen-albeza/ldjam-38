@@ -72,7 +72,7 @@ PlayScene._setupUI = function () {
 
     // create bioma palette
     this.hudPalette = this.game.add.group();
-    this.hudPalette.position.set(520, 8);
+    this.hudPalette.position.set(4, 4);
     this.biomaPalette = new BiomaPalette(this.hudPalette, this.sfx.select);
 
     // world stats
