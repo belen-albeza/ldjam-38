@@ -26,6 +26,8 @@ PlayScene.create = function () {
         error: this.game.add.audio('sfx:error'),
         select: this.game.add.audio('sfx:select')
     };
+    this.song = this.game.add.audio('track:bgm');
+    this.song.fadeIn(2000, true);
 
     this.planetLayer = this.game.add.group();
     this.planetLayer.position.set(256, 256);
@@ -235,6 +237,10 @@ PlayScene._showResetWarning = function () {
         this.game.add.tween(this.restartLabel).to({alpha: 0}, 1000,
             Phaser.Easing.InOut, true, 0, -1, true);
     }
+};
+
+PlayScene.shutdown = function () {
+    this.song.stop();
 };
 
 module.exports = PlayScene;

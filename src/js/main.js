@@ -37,6 +37,7 @@ var PreloaderScene = {
         this.game.load.audio('sfx:select', 'audio/select.wav');
         this.game.load.audio('sfx:placed', 'audio/placed.wav');
         this.game.load.audio('sfx:error', 'audio/error.wav');
+        this.game.load.audio('track:bgm', ['audio/bgm.mp3', 'audio/bgm.ogg']);
         // fonts
         this.game.load.image('font', 'images/retrofont.png');
         // tilesets and spritesheets
