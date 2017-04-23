@@ -63,9 +63,9 @@ var PreloaderScene = {
     /*jshint +W071 */
 
     create: function () {
-        // this.game.state.start('title');
+        this.game.state.start('title');
         // // TODO: disable this
-        this.game.state.start('play', true, false, 4);
+        // this.game.state.start('play', true, false, 4);
     }
 };
 
