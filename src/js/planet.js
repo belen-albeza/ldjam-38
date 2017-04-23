@@ -22,7 +22,7 @@ const MASKS = {
 };
 
 const MAX_WATER = {
-    SOIL: 20,
+    SOIL: 40,
     DESERT: 10
 };
 const SOIL_NO_VEG_MAX_WATER = 20;
@@ -102,35 +102,47 @@ Planet.prototype._tickWaterLevel = function (cell, col, row) {
     cell.water = Math.max(0, Math.min(cell.water, MAX_WATER[cell.bioma]));
 };
 
+/*jshint -W074 */
 Planet.prototype._tickCell = function (cell, col, row) {
     let upper = this.get(col, row - 1, true);
 
     // soil, desert
     if (isEarth(cell.bioma)) {
         this._tickWaterLevel(cell, col, row);
+    }
 
-        // desertification and loss of plants when land loses water
-        if (cell.water === 0) {
-            if (upper.bioma === 'PLANTS') { upper.shiftTo = 'EMPTY'; }
-            if (cell.bioma === 'SOIL') { cell.shiftTo = 'DESERT'; }
+    switch(cell.bioma) {
+    case 'DESERT':
+        // loss of plants when no water
+        if (cell.water === 0 && upper.bioma === 'PLANTS') {
+            upper.shiftTo = 'EMPTY';
         }
         // shift from desert to soil when humid enough
-        else if (cell.bioma === 'DESERT' && cell.water >= MAX_WATER.DESERT) {
+        else if (cell.water >= MAX_WATER.DESERT) {
             cell.shiftTo = 'SOIL';
         }
+        break;
+    case 'SOIL':
+        // desertification and loss of plants when no water
+        if (cell.water === 0) {
+            if (upper.bioma === 'PLANTS') { upper.shiftTo = 'EMPTY'; }
+            cell.shiftTo = 'DESERT';
+        }
         // grow plants on soil with water
-        else if (cell.bioma === 'SOIL' && upper.bioma === 'EMPTY' &&
+        else if (upper.bioma === 'EMPTY' &&
         cell.water >= SOIL_NO_VEG_MAX_WATER) {
-            upper.shiftTo = 'PLANTS';
+            // upper.shiftTo = 'PLANTS';
         }
         // ungrown plants on soil when loss of water
-        else if (cell.bioma === 'SOIL' && upper.bioma === 'PLANTS' &&
+        else if (upper.bioma === 'PLANTS' &&
         cell.water < SOIL_NO_VEG_MAX_WATER) {
             upper.shiftTo = 'EMPTY';
         }
+
+        break;
     }
 };
-
+/*jshint +W074 */
 
 Planet.prototype.prettyPrint = function () {
     let txt = '';
@@ -233,9 +245,10 @@ Planet.prototype._buildInitialData = function(mask) {
 };
 
 Planet.prototype._buildBiomaData = function (bioma) {
+    let water = bioma === 'SOIL' ? SOIL_NO_VEG_MAX_WATER : 0;
     return {
         bioma: bioma,
-        water: 0,
+        water: water,
         ticks: 0
     };
 };
