@@ -64,14 +64,18 @@ var PreloaderScene = {
         this.load.setPreloadSprite(this.loadingBar);
 
         // load assets for the game
+
+        // audio files
         this.game.load.audio('sfx:select', 'audio/select.wav');
         this.game.load.audio('sfx:placed', 'audio/placed.wav');
         this.game.load.audio('sfx:error', 'audio/error.wav');
-
+        // fonts
+        this.game.load.image('font', 'images/retrofont.png');
+        // tilesets and spritesheets
         this.game.load.image('tileset', 'images/biomas_tileset.png');
         this.game.load.spritesheet('palette', 'images/bioma_palette.png',
             32, 32);
-
+        // images
         this.game.load.image('mask:tiny', 'images/mask_tiny.png');
         this.game.load.image('mask:medium', 'images/mask_medium.png');
         this.game.load.image('sky:tiny', 'images/blue_sky_tiny.png');
@@ -85,7 +89,7 @@ var PreloaderScene = {
 
 
 window.onload = function () {
-    var game = new Phaser.Game(800, 512, Phaser.AUTO);
+    var game = new Phaser.Game(512, 512, Phaser.AUTO);
 
     game.state.add('boot', BootScene);
     game.state.add('preloader', PreloaderScene);
@@ -107,9 +111,9 @@ function Palette(group, sfx) {
     this.buttons = {
         water: new Phaser.Button(group.game, 0, 0, 'palette',
             this.selectBioma.bind(this, BIOMAS.WATER, 0), this, 0, 0, 0, 0),
-        earth: new Phaser.Button(group.game, 36, 0, 'palette',
+        earth: new Phaser.Button(group.game, 0, 36, 'palette',
             this.selectBioma.bind(this, BIOMAS.DESERT, 1), this, 1, 1, 1, 1),
-        vegetation: new Phaser.Button(group.game, 72, 0, 'palette',
+        vegetation: new Phaser.Button(group.game, 0, 72, 'palette',
             this.selectBioma.bind(this, BIOMAS.PLANTS, 2), this, 2, 2, 2, 2)
     };
     Object.keys(this.buttons).forEach(function (key) {
@@ -144,26 +148,20 @@ const REVERSE_BIOMAS = Object.keys(BIOMAS).reduce(function (res, key) {
 }, {});
 
 const MASKS = {
-    TINY: '@    @' +
-          '      ' +
-          '      ' +
-          '      ' +
-          'xxxxxx' +
-          '@xxxx@',
-    MEDIUM: '@@      @@' +
-            '@        @' +
-            '          ' +
-            '          ' +
-            '          ' +
-            'xxxxxxxxxx' +
-            'xxxxxxxxxx' +
-            'xxxxxxxxxx' +
-            '@xxxxxxxx@' +
-            '@@xxxxxx@@'
+    FREESTYLE: '@@      @@' +
+               '@        @' +
+               '          ' +
+               '          ' +
+               '          ' +
+               'xxxxxxxxxx' +
+               'xxxxxxxxxx' +
+               'xxxxxxxxxx' +
+               '@xxxxxxxx@' +
+               '@@xxxxxx@@'
 };
 
 const MAX_WATER = {
-    SOIL: 20,
+    SOIL: 40,
     DESERT: 10
 };
 const SOIL_NO_VEG_MAX_WATER = 20;
@@ -180,33 +178,30 @@ function isSolidOrWater(bioma) {
     return bioma !== 'EMPTY' && !isVegetation(bioma);
 }
 
-function Planet(size, group) {
+const SIZE = 10;
+const T_SIZE = 32;
+
+function Planet(group) {
     this.group = group;
     this.game = group.game;
 
-    this.radius = Planet.SIZES[size];
-    this.data = this._buildInitialData(this.radius, MASKS[size]);
+    this.data = this._buildInitialData(MASKS.FREESTYLE);
 
     // create sky
-    this.sky = this.group.create(0, 0, 'sky:medium'); // TODO: adjust to radius
+    this.sky = this.group.create(0, 0, 'sky:medium'); // TODO: adjust to SIZE
     this.sky.anchor.setTo(0.5);
 
     // create tile map
-    this.map = this.game.add.tilemap(null, Planet.TSIZE, Planet.TSIZE,
-        this.radius, this.radius);
+    this.map = this.game.add.tilemap(null, T_SIZE, T_SIZE, SIZE, SIZE);
     this.map.addTilesetImage('bioma', 'tileset');
-    this.mapLayer = this.map.create('main', this.radius, this.radius,
-        Planet.TSIZE, Planet.TSIZE, group);
+    this.mapLayer = this.map.create('main', SIZE, SIZE, T_SIZE, T_SIZE,
+        group);
     this.mapLayer.anchor.setTo(0.5);
     this._updateMapFromData();
 }
 
-Planet.SIZES = {
-    TINY: 6,
-    MEDIUM: 10
-};
-
-Planet.TSIZE = 32;
+Planet.T_SIZE = T_SIZE;
+Planet.SIZE = SIZE;
 
 
 Planet.prototype.update = function () {
@@ -214,57 +209,13 @@ Planet.prototype.update = function () {
 };
 
 Planet.prototype.tick = function () {
-    let self = this;
-    function updateWaterLevel(cell, col, row) {
-        let oldWater = cell.water;
-        if (self.get(col - 1, row) === 'WATER') { cell.water++; }
-        if (self.get(col + 1, row) === 'WATER') { cell.water++; }
-        if (self.get(col, row + 1) === 'WATER') { cell.water++; }
-        if (self.get(col, row - 1) === 'WATER') { cell.water++; }
-
-        if (cell.water - oldWater === 0) {
-            cell.water--;
-        }
-
-        cell.water = Math.max(0, Math.min(cell.water, MAX_WATER[cell.bioma]));
-    }
-
-    function updateCell(cell, col, row) {
-        let upper = self.get(col, row - 1, true);
-
-        // soil, desert
-        if (isEarth(cell.bioma)) {
-            updateWaterLevel(cell, col, row);
-
-            // desertification and loss of plants when land loses water
-            if (cell.water === 0) {
-                if (upper.bioma === 'PLANTS') { upper.shiftTo = 'EMPTY'; }
-                if (cell.bioma === 'SOIL') { cell.shiftTo = 'DESERT'; }
+    for (let col = 0; col < SIZE; col++) {
+        for (let row = 0; row < SIZE; row++) {
+            let cell = this.data[row * SIZE + col];
+            if (cell.bioma !== null) {
+                this._tickCell(cell, col, row);
+                cell.ticks = (cell.ticks + 1) % 100; // TODO: magic number
             }
-            // shift from desert to soil when humid enough
-            else if (cell.bioma === 'DESERT' && cell.water >= MAX_WATER.DESERT) {
-                cell.shiftTo = 'SOIL';
-            }
-            // grow plants on soil with water
-            else if (cell.bioma === 'SOIL' && upper.bioma === 'EMPTY' &&
-            cell.water >= SOIL_NO_VEG_MAX_WATER) {
-                upper.shiftTo = 'PLANTS';
-            }
-            // ungrown plants on soil when loss of water
-            else if (cell.bioma === 'SOIL' && upper.bioma === 'PLANTS' &&
-            cell.water < SOIL_NO_VEG_MAX_WATER) {
-                upper.shiftTo = 'EMPTY';
-            }
-        }
-    }
-
-    for (let col = 0; col < this.radius; col++) {
-        for (let row = 0; row < this.radius; row++) {
-            let cell = this.data[row * this.radius + col];
-            if (cell.bioma === null) { continue; }
-
-            updateCell(cell, col, row);
-            cell.ticks = (cell.ticks + 1) % 100; // TODO: adjust magic number
         }
     }
 
@@ -276,23 +227,79 @@ Planet.prototype.tick = function () {
     }
 };
 
+Planet.prototype._tickWaterLevel = function (cell, col, row) {
+    let oldWater = cell.water;
+    if (this.get(col - 1, row) === 'WATER') { cell.water++; }
+    if (this.get(col + 1, row) === 'WATER') { cell.water++; }
+    if (this.get(col, row + 1) === 'WATER') { cell.water++; }
+    if (this.get(col, row - 1) === 'WATER') { cell.water++; }
+
+    if (cell.water - oldWater === 0) {
+        cell.water--;
+    }
+
+    cell.water = Math.max(0, Math.min(cell.water, MAX_WATER[cell.bioma]));
+};
+
+/*jshint -W074 */
+Planet.prototype._tickCell = function (cell, col, row) {
+    let upper = this.get(col, row - 1, true);
+
+    // soil, desert
+    if (isEarth(cell.bioma)) {
+        this._tickWaterLevel(cell, col, row);
+    }
+
+    switch(cell.bioma) {
+    case 'DESERT':
+        // loss of plants when no water
+        if (cell.water === 0 && upper.bioma === 'PLANTS') {
+            upper.shiftTo = 'EMPTY';
+        }
+        // shift from desert to soil when humid enough
+        else if (cell.water >= MAX_WATER.DESERT) {
+            cell.shiftTo = 'SOIL';
+        }
+        break;
+    case 'SOIL':
+        // desertification and loss of plants when no water
+        if (cell.water === 0) {
+            if (upper.bioma === 'PLANTS') { upper.shiftTo = 'EMPTY'; }
+            cell.shiftTo = 'DESERT';
+        }
+        // grow plants on soil with water
+        else if (upper.bioma === 'EMPTY' &&
+        cell.water >= SOIL_NO_VEG_MAX_WATER) {
+            // upper.shiftTo = 'PLANTS';
+        }
+        // ungrown plants on soil when loss of water
+        else if (upper.bioma === 'PLANTS' &&
+        cell.water < SOIL_NO_VEG_MAX_WATER) {
+            upper.shiftTo = 'EMPTY';
+        }
+
+        break;
+    }
+};
+/*jshint +W074 */
 
 Planet.prototype.prettyPrint = function () {
     let txt = '';
-    for (let row = 0; row < this.radius; row++) {
+    for (let row = 0; row < SIZE; row++) {
         txt += this.data
-            .slice(row * this.radius, row * this.radius + this.radius)
-            .reduce(function (res, x) { return res + x; }, '');
-        txt += row === this.radius - 1 ? '' : '\n';
+            .slice(row * SIZE, row * SIZE + SIZE)
+            .reduce(function (res, x) { return res + x.bioma; }, '');
+        txt += row === SIZE - 1 ? '' : '\n';
     }
+    return txt;
 };
 
 Planet.prototype.putBiomaWorldXY = function (bioma, worldX, worldY) {
     let x = worldX - (this.group.x + this.mapLayer.left);
     let y = worldY - (this.group.y + this.mapLayer.top);
 
-    let col = Math.floor(x / Planet.TSIZE);
-    let row = Math.floor(y / Planet.TSIZE);
+    let col = Math.floor(x / T_SIZE);
+    let row = Math.floor(y / T_SIZE);
     return this.set(col, row, REVERSE_BIOMAS[bioma]);
 };
 
@@ -302,14 +309,14 @@ Planet.prototype.getCellXY = function (worldX, worldY) {
     let x = worldX - (this.group.x + this.mapLayer.left);
     let y = worldY - (this.group.y + this.mapLayer.top);
 
-    let col = Math.floor(x / Planet.TSIZE);
-    let row = Math.floor(y / Planet.TSIZE);
+    let col = Math.floor(x / T_SIZE);
+    let row = Math.floor(y / T_SIZE);
     return this.get(col, row, true);
 };
 
 Planet.prototype.get = function(col, row, full) {
-    if (col >= 0 && col < this.radius && row >= 0 && row < this.radius) {
-        let cell = this.data[row * this.radius + col];
+    if (col >= 0 && col < SIZE && row >= 0 && row < SIZE) {
+        let cell = this.data[row * SIZE + col];
         return full ? cell : cell.bioma;
     }
     else {
@@ -323,10 +330,10 @@ Planet.prototype.get = function(col, row, full) {
 // -1: tile outside map bounds
 
 Planet.prototype.set = function(col, row, value) {
-    if (col >= 0 && col < this.radius && row >= 0 && row < this.radius) {
-        if (this.data[row * this.radius + col] !== null) { // avoid mask
+    if (col >= 0 && col < SIZE && row >= 0 && row < SIZE) {
+        if (this.data[row * SIZE + col] !== null) { // avoid mask
             if (this.validateBioma(col, row, value)) {
-                this.data[row * this.radius + col] =
+                this.data[row * SIZE + col] =
                     this._buildBiomaData(value);
                 this._applyPlacementEffects(col, row);
                 return 1;
@@ -368,8 +375,8 @@ Planet.prototype._applyPlacementEffects = function (col, row) {
 };
 
 
-Planet.prototype._buildInitialData = function(radius, mask) {
-    let data = new Array(radius * radius);
+Planet.prototype._buildInitialData = function(mask) {
+    let data = new Array(SIZE * SIZE);
     for (let i = 0; i < data.length; i++) {
         data[i] = this._buildBiomaData(REVERSE_BIOMAS[mask[i]] || null);
     }
@@ -377,17 +384,19 @@ Planet.prototype._buildInitialData = function(radius, mask) {
 };
 
 Planet.prototype._buildBiomaData = function (bioma) {
+    let water = bioma === 'SOIL' ? SOIL_NO_VEG_MAX_WATER : 0;
     return {
         bioma: bioma,
-        water: 0,
+        water: water,
         ticks: 0
     };
 };
 
+/*jshint -W074 */
 Planet.prototype._updateMapFromData = function() {
-    for (let row = 0; row < this.radius; row++) {
-        for (let col = 0; col < this.radius; col++) {
-            let bioma = this.data[row * this.radius + col].bioma;
+    for (let row = 0; row < SIZE; row++) {
+        for (let col = 0; col < SIZE; col++) {
+            let bioma = this.data[row * SIZE + col].bioma;
             let tileIndex = null;
 
             switch (bioma) {
@@ -415,6 +424,7 @@ Planet.prototype._updateMapFromData = function() {
         }
     }
 };
+/*jshint +W074 */
 
 module.exports = Planet;
 
@@ -440,14 +450,11 @@ PlayScene.create = function () {
 
     this.planetLayer = this.game.add.group();
     this.planetLayer.position.set(256, 256);
-    this.planet = new Planet('MEDIUM', this.planetLayer);
+    this.planet = new Planet(this.planetLayer);
 
     this.game.add.image(0, 0, 'mask:medium'); // TODO: adjust to planet size
 
-    // create bioma palette
-    this.hud = this.game.add.group();
-    this.hud.position.set(520, 8);
-    this.biomaPalette = new BiomaPalette(this.hud, this.sfx.select);
+    this._setupUI();
 
     // cursor
     this.cursorSprite = this.game.add.image(0, 0, 'palette');
@@ -491,6 +498,33 @@ PlayScene._setupInput = function () {
     bg.events.onInputDown.add(this._handleWorldClick, this);
 };
 
+PlayScene._setupUI = function () {
+    this.text = {};
+
+    // create bioma palette
+    this.hudPalette = this.game.add.group();
+    this.hudPalette.position.set(4, 4);
+    this.biomaPalette = new BiomaPalette(this.hudPalette, this.sfx.select);
+
+    // world stats
+    this.hudStats = this.game.add.group();
+    this.hudStats.position.set(4, 464);
+    this.text.waterStat = this._buildTextLabel(this.hudStats, 0, 0, '0 (dry)');
+    this.text.greenStat = this._buildTextLabel(this.hudStats, 0, 24,
+        '0 (dead)');
+};
+
+PlayScene._buildTextLabel = function (group, x, y, text) {
+    let font = this.game.add.retroFont('font', 16, 24,
+        Phaser.RetroFont.TEXT_SET6);
+    let label = this.game.make.image(x, y, font);
+
+    group.add(label);
+    if (text) { font.text = text; }
+
+    return {font: font, label: label};
+};
+
 PlayScene._handleWorldClick = function (target, pointer) {
     if (this.biomaPalette.currentBioma) { // place bioma in world
         let placedOutcome = this.planet.putBiomaWorldXY(
@@ -514,7 +548,7 @@ PlayScene._handleWorldClick = function (target, pointer) {
 };
 
 PlayScene._snapToGrid = function (value) {
-    return Math.floor(value / Planet.TSIZE) * Planet.TSIZE;
+    return Math.floor(value / Planet.T_SIZE) * Planet.T_SIZE;
 };
 
 module.exports = PlayScene;
