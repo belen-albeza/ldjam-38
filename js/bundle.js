@@ -388,6 +388,11 @@ Planet.prototype._tickWaterLevel = function (cell, col, row) {
         cell.water--;
     }
 
+    // humid worlds provide water to soil
+    if (cell.bioma === 'SOIL' && this.stats.waterLabel === 'humid') {
+        cell.water = SOIL_NO_VEG_MAX_WATER;
+    }
+
     cell.water = Math.max(0, Math.min(cell.water, MAX_WATER[cell.bioma]));
 };
 
@@ -408,8 +413,12 @@ Planet.prototype._tickCell = function (cell, col, row) {
         this.stats.waterLabel === 'dry') {
             upper.shiftTo = 'EMPTY';
         }
-        // shift from desert to soil when humid enough
+        // shift from desert to soil when it has enough water
         else if (cell.water >= MAX_WATER.DESERT) {
+            cell.shiftTo = 'SOIL';
+        }
+        // shift from desert to soil when world is humid
+        else if (this.stats.waterLabel === 'humid') {
             cell.shiftTo = 'SOIL';
         }
         break;
