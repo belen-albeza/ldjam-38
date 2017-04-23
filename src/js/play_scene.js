@@ -3,6 +3,7 @@
 const utils = require('./utils.js');
 const Level = require('./level.js');
 const Planet = require('./planet.js');
+const Cloud = require('./cloud.js');
 const BiomaPalette = require('./palette.js');
 const VictoryCard = require('./victory_card.js');
 const GoalsCard = require('./goals_card.js');
@@ -32,6 +33,15 @@ PlayScene.create = function () {
     this.planetLayer = this.game.add.group();
     this.planetLayer.position.set(256, 256);
     this.planet = new Planet(this.planetLayer, this.level.data.map);
+
+    // spawn clouds
+    let clouds = this.planet.cloudLayer;
+    // clouds.position.set(this.planetLayer.left, this.planetLayer.top);
+    clouds.position.set(-160, -160);
+    // console.log('clouds', clouds.position, clouds.parent.position);
+    clouds.add(new Cloud(this.game, 50, 96));
+    clouds.add(new Cloud(this.game, 200, 40));
+    clouds.add(new Cloud(this.game, 328, 156));
 
     this.game.add.image(0, 0, 'mask:medium'); // TODO: adjust to planet size
 

@@ -37,6 +37,9 @@ function Planet(group, mapData) {
     this.sky = this.group.create(0, 0, 'sky:medium'); // TODO: adjust to SIZE
     this.sky.anchor.setTo(0.5);
 
+    this.cloudLayer = this.game.add.group();
+    this.group.add(this.cloudLayer);
+
     // create tile map
     this.map = this.game.add.tilemap(null, T_SIZE, T_SIZE, SIZE, SIZE);
     this.map.addTilesetImage('bioma', 'tileset');

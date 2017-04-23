@@ -52,6 +52,8 @@ var PreloaderScene = {
         // images
         this.game.load.image('mask:medium', 'images/mask_medium.png');
         this.game.load.image('sky:medium', 'images/blue_sky_medium.png');
+        this.game.load.image('cloud:small', 'images/cloud_small.png');
+        this.game.load.image('cloud:big', 'images/cloud_big.png');
         this.game.load.image('card:small', 'images/card_small.png');
         this.game.load.image('card:medium', 'images/card_medium.png');
         this.game.load.image('bg:modal', 'images/modal_bg.png');
@@ -63,9 +65,9 @@ var PreloaderScene = {
     /*jshint +W071 */
 
     create: function () {
-        this.game.state.start('title');
+        // this.game.state.start('title');
         // // TODO: disable this
-        // this.game.state.start('play', true, false, 4);
+        this.game.state.start('play', true, false, -1);
     }
 };
 
