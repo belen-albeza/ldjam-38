@@ -8,23 +8,11 @@ const REVERSE_BIOMAS = Object.keys(BIOMAS).reduce(function (res, key) {
     return res;
 }, {});
 
-const MASKS = {
-    FREESTYLE: '@@      @@' +
-               '@        @' +
-               '          ' +
-               '          ' +
-               '          ' +
-               'xxxxxxxxxx' +
-               'xxxxxxxxxx' +
-               'xxxxxxxxxx' +
-               '@xxxxxxxx@' +
-               '@@xxxxxx@@'
-};
-
 const MAX_WATER = {
     SOIL: 40,
     DESERT: 10
 };
+
 const SOIL_NO_VEG_MAX_WATER = 20;
 
 function isEarth(bioma) {
@@ -42,11 +30,11 @@ function isSolidOrWater(bioma) {
 const SIZE = 10;
 const T_SIZE = 32;
 
-function Planet(group) {
+function Planet(group, mapData) {
     this.group = group;
     this.game = group.game;
 
-    this.data = this._buildInitialData(MASKS.FREESTYLE);
+    this.data = this._buildInitialData(mapData);
     this.stats = {};
 
     // create sky
@@ -166,6 +154,12 @@ Planet.prototype.validateBioma = function (col, row, value) {
     default:
         return true;
     }
+};
+
+Planet.prototype.getBiomaAmount = function (bioma) {
+    return this.data.reduce(function (res, cell) {
+        return res + (cell.bioma === bioma ? 1 : 0);
+    }, 0);
 };
 
 Planet.prototype._applyPlacementEffects = function (col, row) {

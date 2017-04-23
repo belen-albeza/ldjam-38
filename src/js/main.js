@@ -49,6 +49,9 @@ var PreloaderScene = {
         this.game.load.image('mask:medium', 'images/mask_medium.png');
         this.game.load.image('sky:tiny', 'images/blue_sky_tiny.png');
         this.game.load.image('sky:medium', 'images/blue_sky_medium.png');
+        this.game.load.image('card:small', 'images/card_small.png');
+        this.game.load.image('bg:modal', 'images/modal_bg.png');
+        this.game.load.image('button:small', 'images/button_small.png');
     },
 
     create: function () {

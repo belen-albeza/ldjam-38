@@ -1,12 +1,19 @@
 'use strict';
 
+const utils = require('./utils.js');
+const Level = require('./level.js');
 const Planet = require('./planet.js');
 const BiomaPalette = require('./palette.js');
+const VictoryCard = require('./victory_card.js');
 
 // const TSIZE = 32;
 
 
 var PlayScene = {};
+
+PlayScene.init = function (levelIndex) {
+    this.level = new Level(levelIndex || 0);
+};
 
 PlayScene.create = function () {
     this._setupInput();
@@ -19,7 +26,7 @@ PlayScene.create = function () {
 
     this.planetLayer = this.game.add.group();
     this.planetLayer.position.set(256, 256);
-    this.planet = new Planet(this.planetLayer);
+    this.planet = new Planet(this.planetLayer, this.level.data.map);
 
     this.game.add.image(0, 0, 'mask:medium'); // TODO: adjust to planet size
 
@@ -36,13 +43,19 @@ PlayScene.create = function () {
 PlayScene.update = function () {
     this.planet.update();
 
-    this._updateUI();
-
     // apply bioma cycles to planet
     this.frameCounter++;
     if (this.frameCounter === 15) {
         this.planet.tick();
         this.frameCounter = 0;
+    }
+
+    this.level.update(this.planet);
+    this._updateUI();
+
+    if (this.level.isVictory()) {
+        this.game.time.events.add(Phaser.Timer.SECOND * 0.5, this._victory,
+            this);
     }
 };
 
@@ -50,12 +63,30 @@ PlayScene.resetLevel = function () {
     this.game.state.restart();
 };
 
+PlayScene._victory = function () {
+    this._showCard('victory');
+    this.cards.victory.onClose.addOnce(function () {
+        // TODO: Advance to next level, sfx, etc.
+        this.game.state.restart();
+    }, this);
+};
+
+PlayScene._showCard = function (which) {
+    this.cards[which].show();
+    this.isModalActive = true;
+};
+
+PlayScene._hideCard = function () {
+    // TODO
+    this.isModalActive = false;
+};
+
 PlayScene._updateUI = function () {
     // update bioma cursor
     this.cursorSprite.x = this._snapToGrid(this.game.input.x);
     this.cursorSprite.y = this._snapToGrid(this.game.input.y);
 
-    if (this.biomaPalette.currentBioma !== null)  {
+    if (this.biomaPalette.currentBioma !== null && !this.isModalActive)  {
         this.cursorSprite.frame = this.biomaPalette.currentIcon;
         this.cursorSprite.visible = true;
     }
@@ -68,6 +99,7 @@ PlayScene._updateUI = function () {
         this.planet.stats.waterLabel + ')';
     this.text.greenStat.font.text = this.planet.stats.normalizedGreen + ' (' +
         this.planet.stats.greenLabel + ')';
+
 };
 
 PlayScene._setupInput = function () {
@@ -94,8 +126,8 @@ PlayScene._setupUI = function () {
     this.hudStats.position.set(4, 464);
     this.hudStats.create(0, 0, 'icon:stats', 0);
     this.hudStats.create(0, 24, 'icon:stats', 1);
-    this.text.waterStat = this._buildTextLabel(this.hudStats, 20, 0, '0 (dry)');
-    this.text.greenStat = this._buildTextLabel(this.hudStats, 20, 24,
+    this.text.waterStat = utils.buildTextLabel(this.hudStats, 20, 0, '0 (dry)');
+    this.text.greenStat = utils.buildTextLabel(this.hudStats, 20, 24,
         '0 (barren)');
 
     // reset button
@@ -104,17 +136,15 @@ PlayScene._setupUI = function () {
         this.resetLevel();
     }, this, 1, 1, 1, 1);
     resetButton.anchor.setTo(1, 0);
-};
 
-PlayScene._buildTextLabel = function (group, x, y, text) {
-    let font = this.game.add.retroFont('font', 16, 24,
-        Phaser.RetroFont.TEXT_SET6);
-    let label = this.game.make.image(x, y, font);
-
-    group.add(label);
-    if (text) { font.text = text; }
-
-    return {font: font, label: label};
+    // modals
+    this.hudCards = this.game.add.group();
+    let modalBg = this.hudCards.create(0, 0, 'bg:modal');
+    modalBg.inputEnabled = true;
+    this.cards = {
+        victory: new VictoryCard(this.hudCards)
+    };
+    this.hudCards.visible = false;
 };
 
 PlayScene._handleWorldClick = function (target, pointer) {
@@ -136,6 +166,7 @@ PlayScene._handleWorldClick = function (target, pointer) {
     else { // show bioma stats
         let cell = this.planet.getCellXY(pointer.worldX, pointer.worldY);
         console.log(cell);
+        console.log(this.level.getProgress());
     }
 };
 
