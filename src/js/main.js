@@ -43,6 +43,7 @@ var PreloaderScene = {
             32, 32);
         this.game.load.spritesheet('icon:stats', 'images/icon_stats.png',
             16, 24);
+        this.game.load.spritesheet('icon:misc', 'images/icon_misc.png', 32, 32);
         // images
         this.game.load.image('mask:tiny', 'images/mask_tiny.png');
         this.game.load.image('mask:medium', 'images/mask_medium.png');

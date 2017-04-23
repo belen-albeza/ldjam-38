@@ -46,6 +46,10 @@ PlayScene.update = function () {
     }
 };
 
+PlayScene.resetLevel = function () {
+    this.game.state.restart();
+};
+
 PlayScene._updateUI = function () {
     // update bioma cursor
     this.cursorSprite.x = this._snapToGrid(this.game.input.x);
@@ -93,6 +97,13 @@ PlayScene._setupUI = function () {
     this.text.waterStat = this._buildTextLabel(this.hudStats, 20, 0, '0 (dry)');
     this.text.greenStat = this._buildTextLabel(this.hudStats, 20, 24,
         '0 (barren)');
+
+    // reset button
+    let resetButton = this.game.add.button(508, 4, 'icon:misc', function () {
+        this.sfx.select.play(); // TODO: pick a different sound for reloading?
+        this.resetLevel();
+    }, this, 1, 1, 1, 1);
+    resetButton.anchor.setTo(1, 0);
 };
 
 PlayScene._buildTextLabel = function (group, x, y, text) {
