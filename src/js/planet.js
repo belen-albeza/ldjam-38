@@ -308,15 +308,17 @@ Planet.prototype._updateGlobalStats = function () {
 
 Planet.prototype._updateGreenStats = function () {
     const GREEN_PLANTS = 1;
+    const GREEN_FOREST = 2;
     const GREEN_JUNGLE = 3;
 
-    const GREEN_GREEN = 10;
-    const GREEN_LUSH = 20;
+    const GREEN_GREEN = 4;
+    const GREEN_LUSH = 10;
 
     this.stats.green = this.data.reduce(function (res, cell) {
         let level = 0;
         if (cell.bioma === 'PLANTS') { level += GREEN_PLANTS; }
-        // TODO: forest and jungle
+        if (cell.bioma === 'FOREST') { level += GREEN_FOREST; }
+        // TODO: add jungle
         return res + level;
     }, 0);
 
