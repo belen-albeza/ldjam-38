@@ -55,6 +55,48 @@ module.exports = {
 },{}],2:[function(require,module,exports){
 'use strict';
 
+const MIN_SPEED = 10;
+const MAX_SPEED = 50;
+
+function Cloud(game, x, y) {
+    Phaser.Sprite.call(this, game, x, y, 'cloud:small');
+
+    this.anchor.setTo(0.5, 0.5);
+    this.alpha = this.game.rnd.realInRange(0.3, 0.9);
+
+    this.game.physics.enable(this);
+    this.reset(x, y);
+}
+
+// inherit from Phaser.prototype
+Cloud.prototype = Object.create(Phaser.Sprite.prototype);
+Cloud.prototype.constructor = Cloud;
+
+Cloud.prototype.update = function () {
+    if (this.x <= -this.width / 2) {
+        this.reset();
+    }
+};
+
+Cloud.prototype.reset = function (x, y) {
+    Phaser.Sprite.prototype.reset.call(this, x || 0, y || 0);
+    this._wasInside = false;
+
+    if (x === undefined || y === undefined) {
+        this.position.setTo(320 + this.game.rnd.between(0, 320),
+            this.game.rnd.between(20, 120));
+    }
+
+    this.body.velocity.x = -this.game.rnd.between(MIN_SPEED, MAX_SPEED);
+
+    this.key = this.game.rnd.pick(['cloud:small', 'cloud:big']);
+};
+
+module.exports = Cloud;
+
+},{}],3:[function(require,module,exports){
+'use strict';
+
 const utils = require('./utils.js');
 const TILES = require('./bioma_const.js').ICON_MAPPINGS;
 
@@ -122,7 +164,7 @@ GoalsCard.prototype._spawnGoalUI = function (goal, index) {
 
 module.exports = GoalsCard;
 
-},{"./bioma_const.js":1,"./utils.js":10}],3:[function(require,module,exports){
+},{"./bioma_const.js":1,"./utils.js":11}],4:[function(require,module,exports){
 'use strict';
 
 const levelData = require('./level_data.js');
@@ -195,7 +237,7 @@ Level.AMOUNT = LEVELS.length;
 
 module.exports = Level;
 
-},{"./level_data.js":4}],4:[function(require,module,exports){
+},{"./level_data.js":5}],5:[function(require,module,exports){
 'use strict';
 
 const MASKS = {
@@ -273,7 +315,7 @@ module.exports = {
     LEVELS: LEVELS
 };
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 'use strict';
 
 var PlayScene = require('./play_scene.js');
@@ -328,6 +370,8 @@ var PreloaderScene = {
         // images
         this.game.load.image('mask:medium', 'images/mask_medium.png');
         this.game.load.image('sky:medium', 'images/blue_sky_medium.png');
+        this.game.load.image('cloud:small', 'images/cloud_small.png');
+        this.game.load.image('cloud:big', 'images/cloud_big.png');
         this.game.load.image('card:small', 'images/card_small.png');
         this.game.load.image('card:medium', 'images/card_medium.png');
         this.game.load.image('bg:modal', 'images/modal_bg.png');
@@ -341,7 +385,7 @@ var PreloaderScene = {
     create: function () {
         this.game.state.start('title');
         // // TODO: disable this
-        // this.game.state.start('play', true, false, 4);
+        // this.game.state.start('play', true, false, -1);
     }
 };
 
@@ -357,7 +401,7 @@ window.onload = function () {
     game.state.start('boot');
 };
 
-},{"./play_scene.js":8,"./title_scene.js":9}],6:[function(require,module,exports){
+},{"./play_scene.js":9,"./title_scene.js":10}],7:[function(require,module,exports){
 'use strict';
 
 const BIOMAS = require('./bioma_const.js').BIOMAS;
@@ -439,7 +483,7 @@ Palette.prototype._setupBudgetUI = function (budget) {
 
 module.exports = Palette;
 
-},{"./bioma_const.js":1,"./utils.js":10}],7:[function(require,module,exports){
+},{"./bioma_const.js":1,"./utils.js":11}],8:[function(require,module,exports){
 'use strict';
 
 let bioData = require('./bioma_const.js');
@@ -478,6 +522,9 @@ function Planet(group, mapData) {
     // create sky
     this.sky = this.group.create(0, 0, 'sky:medium'); // TODO: adjust to SIZE
     this.sky.anchor.setTo(0.5);
+
+    this.cloudLayer = this.game.add.group();
+    this.group.add(this.cloudLayer);
 
     // create tile map
     this.map = this.game.add.tilemap(null, T_SIZE, T_SIZE, SIZE, SIZE);
@@ -581,11 +628,15 @@ Planet.prototype.set = function(col, row, value) {
 };
 
 Planet.prototype.validateBioma = function (col, row, value) {
+    let current = this.get(col, row);
+
+    // don't allow to put the same block again (and consume budget)
+    if (current === value) { return false; }
+
     let left = this.get(col - 1, row);
     let right = this.get(col + 1, row);
     let up = this.get(col, row - 1);
     let down = this.get(col, row + 1);
-    let current = this.get(col, row);
 
     switch(value) {
     case 'WATER':
@@ -813,12 +864,13 @@ Planet.prototype._updateWaterStats = function () {
 
 module.exports = Planet;
 
-},{"./bioma_const.js":1}],8:[function(require,module,exports){
+},{"./bioma_const.js":1}],9:[function(require,module,exports){
 'use strict';
 
 const utils = require('./utils.js');
 const Level = require('./level.js');
 const Planet = require('./planet.js');
+const Cloud = require('./cloud.js');
 const BiomaPalette = require('./palette.js');
 const VictoryCard = require('./victory_card.js');
 const GoalsCard = require('./goals_card.js');
@@ -848,6 +900,13 @@ PlayScene.create = function () {
     this.planetLayer = this.game.add.group();
     this.planetLayer.position.set(256, 256);
     this.planet = new Planet(this.planetLayer, this.level.data.map);
+
+    // spawn clouds
+    let clouds = this.planet.cloudLayer;
+    clouds.position.set(-160, -160);
+    clouds.add(new Cloud(this.game, 50, 96));
+    clouds.add(new Cloud(this.game, 200, 40));
+    clouds.add(new Cloud(this.game, 328, 156));
 
     this.game.add.image(0, 0, 'mask:medium'); // TODO: adjust to planet size
 
@@ -1037,10 +1096,6 @@ PlayScene._handleWorldClick = function (target, pointer) {
             break;
         }
     }
-    else { // show bioma stats
-        // let cell = this.planet.getCellXY(pointer.worldX, pointer.worldY);
-        // console.log(cell);
-    }
 };
 
 PlayScene._snapToGrid = function (value) {
@@ -1061,7 +1116,7 @@ PlayScene.shutdown = function () {
 
 module.exports = PlayScene;
 
-},{"./bioma_const":1,"./goals_card.js":2,"./level.js":3,"./palette.js":6,"./planet.js":7,"./utils.js":10,"./victory_card.js":11}],9:[function(require,module,exports){
+},{"./bioma_const":1,"./cloud.js":2,"./goals_card.js":3,"./level.js":4,"./palette.js":7,"./planet.js":8,"./utils.js":11,"./victory_card.js":12}],10:[function(require,module,exports){
 'use strict';
 
 const utils = require('./utils.js');
@@ -1109,7 +1164,7 @@ TitleScene._buildOption = function (x, y, text, callback) {
 
 module.exports = TitleScene;
 
-},{"./utils.js":10}],10:[function(require,module,exports){
+},{"./utils.js":11}],11:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -1125,7 +1180,7 @@ module.exports = {
     }
 };
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 'use strict';
 
 const utils = require('./utils.js');
@@ -1172,4 +1227,4 @@ VictoryCard.prototype.hide = function () {
 
 module.exports = VictoryCard;
 
-},{"./utils.js":10}]},{},[5]);
+},{"./utils.js":11}]},{},[6]);
