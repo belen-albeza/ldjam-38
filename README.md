@@ -4,7 +4,7 @@ HTML5 game entry for [Ludum Dare #38](http://ludumdare.com), a 48-hour solo game
 
 **Play online**:
 
-- Itch.io
+- [Itch.io](https://ladybenko.itch.io/terrartisan)
 - [Github Pages mirror](https://belen-albeza.github.io/ldjam-38/)
 
 Initial scaffolding generated with [generator-gamejam](https://github.com/belen-albeza/generator-gamejam/).
