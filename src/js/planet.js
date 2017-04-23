@@ -142,11 +142,15 @@ Planet.prototype.set = function(col, row, value) {
 };
 
 Planet.prototype.validateBioma = function (col, row, value) {
+    let current = this.get(col, row);
+
+    // don't allow to put the same block again (and consume budget)
+    if (current === value) { return false; }
+
     let left = this.get(col - 1, row);
     let right = this.get(col + 1, row);
     let up = this.get(col, row - 1);
     let down = this.get(col, row + 1);
-    let current = this.get(col, row);
 
     switch(value) {
     case 'WATER':
