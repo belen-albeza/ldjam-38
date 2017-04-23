@@ -123,10 +123,13 @@ PlayScene._updateUI = function () {
     this.text.greenStat.font.text = this.planet.stats.normalizedGreen + ' (' +
         this.planet.stats.greenLabel + ')';
 
-    // update palette
     if (!this.level.isFreeStyle()) {
+        // update palette
         this.biomaPalette.update(this.level.getPalette());
+        // update goals card
+        this.cards.goals.updateGoals(this.level.getProgress());
     }
+
 };
 
 PlayScene._setupInput = function () {

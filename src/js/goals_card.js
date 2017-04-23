@@ -32,6 +32,7 @@ function GoalsCard(parentGroup, goals) {
     );
 
     this.goalGroup = this.group.add(this.game.add.group());
+    this.ticks = [];
     goals.forEach(this._spawnGoalUI, this);
 
     this.goals = goals;
@@ -39,6 +40,11 @@ function GoalsCard(parentGroup, goals) {
 
 GoalsCard.prototype.updateGoals = function(goals) {
     this.goals = goals;
+    this.goals.forEach(function (goal, index) {
+        if (goal.completed) {
+            this.ticks[index].visible = true;
+        }
+    }, this);
 };
 
 GoalsCard.prototype.show = function () {
@@ -53,13 +59,15 @@ GoalsCard.prototype.hide = function () {
 
 GoalsCard.prototype._spawnGoalUI = function (goal, index) {
     let ui = this.game.add.group();
-    this.goalLabels = [];
 
     if (goal.type === 'block') {
         ui.create(0, 0, 'icon:tileset', TILES[goal.blockType]);
-        this.goalLabels.push(utils.buildTextLabel(
-            ui, 40, 6, '' + goal.target));
+        utils.buildTextLabel(ui, 40, 6, '' + goal.target);
         ui.position.set(16, (index + 1) * 36 + 16);
+        let tick = ui.create(72, 6, 'tick');
+        tick.visible = false;
+        tick.waka = goal.blockType;
+        this.ticks.push(tick);
     }
 
     this.goalGroup.add(ui);

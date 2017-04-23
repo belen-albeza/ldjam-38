@@ -61,13 +61,14 @@ var PreloaderScene = {
         this.game.load.image('button:icon', 'images/button_icon.png');
         this.game.load.image('button:medium', 'images/button_medium.png');
         this.game.load.image('globe', 'images/globe.png');
+        this.game.load.image('tick', 'images/tick.png');
     },
     /*jshint +W071 */
 
     create: function () {
-        this.game.state.start('title');
+        // this.game.state.start('title');
         // // TODO: disable this
-        // this.game.state.start('play', true, false, -1);
+        this.game.state.start('play', true, false, 1);
     }
 };
 
