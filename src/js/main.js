@@ -64,7 +64,7 @@ var PreloaderScene = {
     create: function () {
         this.game.state.start('title');
         // // TODO: disable this
-        // this.game.state.start('play', true, false, -1);
+        // this.game.state.start('play', true, false, 1);
     }
 };
 

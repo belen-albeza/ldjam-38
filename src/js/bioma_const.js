@@ -36,8 +36,15 @@ const BIOMAS = {
     PLANTS: ','
 };
 
+const REVERSE_BIOMAS = Object.keys(BIOMAS).reduce(function (res, key) {
+    res[BIOMAS[key]] = key;
+    return res;
+}, {});
+
+
 module.exports = {
     MAPPINGS: TILE_MAPPINGS,
     BIOMAS: BIOMAS,
-    ICON_MAPPINGS: ICON_MAPPINGS
+    ICON_MAPPINGS: ICON_MAPPINGS,
+    REVERSE_BIOMAS
 };

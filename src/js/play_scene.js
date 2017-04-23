@@ -7,6 +7,8 @@ const BiomaPalette = require('./palette.js');
 const VictoryCard = require('./victory_card.js');
 const GoalsCard = require('./goals_card.js');
 
+const REVERSE_BIOMAS = require('./bioma_const').REVERSE_BIOMAS;
+
 var PlayScene = {};
 
 PlayScene.init = function (levelIndex) {
@@ -53,7 +55,7 @@ PlayScene.update = function () {
     this._updateUI();
 
     if (this.level.isVictory()) {
-        this.game.time.events.add(Phaser.Timer.SECOND * 0.5, this._victory,
+        this.game.time.events.add(Phaser.Timer.SECOND * 1.5, this._victory,
             this);
     }
 };
@@ -108,6 +110,10 @@ PlayScene._updateUI = function () {
     this.text.greenStat.font.text = this.planet.stats.normalizedGreen + ' (' +
         this.planet.stats.greenLabel + ')';
 
+    // update palette
+    if (!this.level.isFreeStyle()) {
+        this.biomaPalette.update(this.level.getPalette());
+    }
 };
 
 PlayScene._setupInput = function () {
@@ -128,7 +134,8 @@ PlayScene._setupUI = function () {
     // create bioma palette
     this.hudPalette = this.game.add.group();
     this.hudPalette.position.set(4, 4);
-    this.biomaPalette = new BiomaPalette(this.hudPalette, this.sfx.select);
+    this.biomaPalette = new BiomaPalette(this.hudPalette, this.sfx.select,
+        this.level.isFreeStyle() ? null : this.level.getPalette());
 
     // world stats
     this.hudStats = this.game.add.group();
@@ -187,6 +194,10 @@ PlayScene._handleWorldClick = function (target, pointer) {
         switch (placedOutcome) {
         case 1: // placement was ok
             this.sfx.placed.play();
+            if (!this.level.isFreeStyle()) {
+                this.level.consumeBioma(
+                    REVERSE_BIOMAS[this.biomaPalette.currentBioma]);
+            }
             break;
         case -1: // tile outside bounds
             this.biomaPalette.unselect();

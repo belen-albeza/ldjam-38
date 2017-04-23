@@ -1,12 +1,8 @@
 'use strict';
 
 let bioData = require('./bioma_const.js');
-const BIOMAS = bioData.BIOMAS;
 const TILESET = bioData.MAPPINGS;
-const REVERSE_BIOMAS = Object.keys(BIOMAS).reduce(function (res, key) {
-    res[BIOMAS[key]] = key;
-    return res;
-}, {});
+const REVERSE_BIOMAS = bioData.REVERSE_BIOMAS;
 
 const MAX_WATER = {
     SOIL: 40,
